@@ -14,7 +14,7 @@ Thanks for your interest in contributing! ResumeFlow is open source and welcomes
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+
-- [Rust](https://www.rust-lang.org/tools/install) 1.70+
+- [Rust](https://www.rust-lang.org/tools/install) 1.80+
 - [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
 
 ### Project layout

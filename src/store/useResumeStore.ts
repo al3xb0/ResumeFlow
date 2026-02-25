@@ -16,6 +16,17 @@ export interface ReadabilityResult {
   positives: string[];
 }
 
+export interface VerbIssue {
+  weakVerb: string;
+  line: number;
+  suggestions: string[];
+}
+
+export interface VerbLintResult {
+  issues: VerbIssue[];
+  totalIssues: number;
+}
+
 export type JobInputMode = "text" | "url";
 
 interface ResumeState {
@@ -38,6 +49,9 @@ interface ResumeState {
   isAnalyzing: boolean;
   isExtracting: boolean;
 
+  // Verb linter
+  verbLintResult: VerbLintResult | null;
+
   // Actions
   setResumeText: (text: string) => void;
   setResumeFileName: (name: string | null) => void;
@@ -50,6 +64,7 @@ interface ResumeState {
   setAnalysisResult: (result: AnalysisResult | null) => void;
   setIsAnalyzing: (value: boolean) => void;
   setIsExtracting: (value: boolean) => void;
+  setVerbLintResult: (result: VerbLintResult | null) => void;
   clearResume: () => void;
   clearAll: () => void;
 }
@@ -66,6 +81,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
   analysisResult: null,
   isAnalyzing: false,
   isExtracting: false,
+  verbLintResult: null,
 
   setResumeText: (text) => set({ resumeText: text }),
   setResumeFileName: (name) => set({ resumeFileName: name }),
@@ -78,12 +94,14 @@ export const useResumeStore = create<ResumeState>((set) => ({
   setAnalysisResult: (result) => set({ analysisResult: result }),
   setIsAnalyzing: (value) => set({ isAnalyzing: value }),
   setIsExtracting: (value) => set({ isExtracting: value }),
+  setVerbLintResult: (result) => set({ verbLintResult: result }),
   clearResume: () =>
     set({
       resumeText: "",
       resumeFileName: null,
       analysisResult: null,
       readabilityResult: null,
+      verbLintResult: null,
     }),
   clearAll: () =>
     set({
@@ -93,5 +111,6 @@ export const useResumeStore = create<ResumeState>((set) => ({
       jobUrl: "",
       analysisResult: null,
       readabilityResult: null,
+      verbLintResult: null,
     }),
 }));

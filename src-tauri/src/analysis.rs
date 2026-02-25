@@ -1,13 +1,23 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::LazyLock;
 
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization;
 
+static RE_WHITESPACE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+").unwrap());
+static RE_EMAIL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[\w.+-]+@[\w-]+\.[\w.]+").unwrap());
+static RE_PHONE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\+]?[\d\s\-\(\)]{7,}").unwrap());
+static RE_LINKEDIN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)linkedin\.com/in/[\w\-]+").unwrap());
+static RE_GITHUB: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)github\.com/[\w\-]+").unwrap());
+static RE_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[\s]*[•\-\*▪◦‣⁃]\s*").unwrap());
+
 fn normalize(text: &str) -> String {
     let n: String = text.nfkd().collect();
     let lower = n.to_lowercase();
-    let re = Regex::new(r"\s+").unwrap();
-    re.replace_all(&lower, " ").trim().to_string()
+    RE_WHITESPACE.replace_all(&lower, " ").trim().to_string()
 }
 
 const TECH_KEYWORDS: &[&str] = &[
@@ -238,8 +248,8 @@ fn is_tech_mention(word: &str, text: &str) -> bool {
     false
 }
 
-fn nice_case(s: &str) -> String {
-    let known: HashMap<&str, &str> = HashMap::from([
+static NICE_CASE_MAP: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
+    HashMap::from([
         ("javascript", "JavaScript"),
         ("typescript", "TypeScript"),
         ("node.js", "Node.js"),
@@ -311,9 +321,11 @@ fn nice_case(s: &str) -> String {
         ("flutter", "Flutter"),
         ("react native", "React Native"),
         ("material ui", "Material UI"),
-    ]);
+    ])
+});
 
-    if let Some(&nice) = known.get(s.to_lowercase().as_str()) {
+fn nice_case(s: &str) -> String {
+    if let Some(&nice) = NICE_CASE_MAP.get(s.to_lowercase().as_str()) {
         return nice.to_string();
     }
 
@@ -470,17 +482,14 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
         warnings.push("Very few line breaks — text may be poorly parsed".into());
     }
 
-    if Regex::new(r"[\w.+-]+@[\w-]+\.[\w.]+")
-        .unwrap()
-        .is_match(text)
-    {
+    if RE_EMAIL.is_match(text) {
         score += 5;
         positives.push("Email detected".into());
     } else {
         warnings.push("No email address found".into());
     }
 
-    if Regex::new(r"[\+]?[\d\s\-\(\)]{7,}").unwrap().is_match(text) {
+    if RE_PHONE.is_match(text) {
         score += 5;
         positives.push("Phone number detected".into());
     }
@@ -515,6 +524,56 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
         score -= 10;
     }
 
+    // LinkedIn / GitHub profile detection
+    if RE_LINKEDIN.is_match(text) {
+        score += 3;
+        positives.push("LinkedIn profile detected".into());
+    }
+    if RE_GITHUB.is_match(text) {
+        score += 3;
+        positives.push("GitHub profile detected".into());
+    }
+
+    // Too-long resume warning
+    if word_count > 1000 {
+        warnings.push(format!(
+            "{} words — resume may be too long, consider trimming to 1–2 pages",
+            word_count
+        ));
+        score -= 5;
+    }
+
+    // Bullet points usage
+    let bullet_lines = text.lines().filter(|l| RE_BULLET.is_match(l)).count();
+    if bullet_lines >= 5 {
+        score += 5;
+        positives.push(format!("{} bullet points — well-structured", bullet_lines));
+    } else if word_count >= 150 && bullet_lines == 0 {
+        warnings
+            .push("No bullet points detected — consider using bullet lists for experience".into());
+    }
+
+    // Duplicate line detection
+    let mut line_counts: HashMap<String, u32> = HashMap::new();
+    for line in text.lines() {
+        let trimmed = line.trim().to_lowercase();
+        if trimmed.split_whitespace().count() >= 4 {
+            *line_counts.entry(trimmed).or_insert(0) += 1;
+        }
+    }
+    let duplicates: u32 = line_counts
+        .values()
+        .filter(|&&c| c > 1)
+        .map(|c| c - 1)
+        .sum();
+    if duplicates > 0 {
+        warnings.push(format!(
+            "{} duplicate line(s) detected — review for repeated content",
+            duplicates
+        ));
+        score -= 5;
+    }
+
     let final_score = score.clamp(0, 100) as u32;
 
     ReadabilityResult {
@@ -534,6 +593,238 @@ pub struct AnalysisResult {
     pub found_keywords: Vec<String>,
     pub missing_keywords: Vec<String>,
     pub total_keywords: u32,
+}
+
+#[derive(serde::Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct VerbIssue {
+    pub weak_verb: String,
+    pub line: u32,
+    pub suggestions: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VerbLintResult {
+    pub issues: Vec<VerbIssue>,
+    pub total_issues: u32,
+}
+
+const WEAK_VERBS_EN: &[(&str, &[&str])] = &[
+    (
+        "worked",
+        &["engineered", "developed", "delivered", "executed"],
+    ),
+    (
+        "helped",
+        &["facilitated", "enabled", "accelerated", "mentored"],
+    ),
+    (
+        "did",
+        &["accomplished", "executed", "achieved", "performed"],
+    ),
+    ("made", &["built", "designed", "produced", "constructed"]),
+    ("used", &["leveraged", "utilized", "employed", "applied"]),
+    (
+        "handled",
+        &["managed", "orchestrated", "directed", "oversaw"],
+    ),
+    (
+        "was responsible for",
+        &["led", "owned", "drove", "spearheaded"],
+    ),
+    ("responsible for", &["led", "owned", "drove", "spearheaded"]),
+    (
+        "participated",
+        &["contributed", "collaborated", "co‑led", "engaged"],
+    ),
+    (
+        "assisted",
+        &["supported", "enabled", "facilitated", "guided"],
+    ),
+    (
+        "involved in",
+        &["contributed to", "drove", "co‑led", "championed"],
+    ),
+    ("tried", &["attempted", "pursued", "piloted", "prototyped"]),
+    ("got", &["acquired", "obtained", "secured", "attained"]),
+    (
+        "improved",
+        &["optimized", "enhanced", "boosted", "elevated"],
+    ),
+    (
+        "changed",
+        &["transformed", "revamped", "restructured", "redesigned"],
+    ),
+    (
+        "showed",
+        &["demonstrated", "illustrated", "showcased", "proved"],
+    ),
+    (
+        "gave",
+        &["delivered", "presented", "provided", "contributed"],
+    ),
+    (
+        "went",
+        &["transitioned", "migrated", "advanced", "progressed"],
+    ),
+    ("ran", &["managed", "executed", "orchestrated", "operated"]),
+    (
+        "set up",
+        &["established", "configured", "implemented", "architected"],
+    ),
+    (
+        "put together",
+        &["assembled", "compiled", "organized", "formulated"],
+    ),
+    (
+        "looked into",
+        &["investigated", "researched", "analyzed", "evaluated"],
+    ),
+    (
+        "took care of",
+        &["managed", "maintained", "administered", "oversaw"],
+    ),
+];
+
+const WEAK_VERBS_RU: &[(&str, &[&str])] = &[
+    ("делал", &["разработал", "реализовал", "выполнил", "создал"]),
+    (
+        "работал",
+        &["разрабатывал", "внедрял", "проектировал", "реализовывал"],
+    ),
+    (
+        "помогал",
+        &["содействовал", "обеспечивал", "консультировал", "наставлял"],
+    ),
+    (
+        "занимался",
+        &["руководил", "отвечал за", "координировал", "управлял"],
+    ),
+    (
+        "участвовал",
+        &["инициировал", "вносил вклад", "содействовал", "сотрудничал"],
+    ),
+    (
+        "использовал",
+        &["применял", "задействовал", "интегрировал", "внедрил"],
+    ),
+    (
+        "отвечал за",
+        &["руководил", "управлял", "координировал", "обеспечивал"],
+    ),
+    (
+        "был ответственным",
+        &["руководил", "управлял", "контролировал", "координировал"],
+    ),
+    (
+        "пробовал",
+        &[
+            "тестировал",
+            "апробировал",
+            "экспериментировал",
+            "пилотировал",
+        ],
+    ),
+    (
+        "менял",
+        &[
+            "оптимизировал",
+            "трансформировал",
+            "модернизировал",
+            "реструктурировал",
+        ],
+    ),
+    (
+        "показывал",
+        &["демонстрировал", "представлял", "презентовал", "доказывал"],
+    ),
+    (
+        "настраивал",
+        &[
+            "конфигурировал",
+            "оптимизировал",
+            "автоматизировал",
+            "внедрял",
+        ],
+    ),
+    (
+        "делала",
+        &["разработала", "реализовала", "выполнила", "создала"],
+    ),
+    (
+        "работала",
+        &[
+            "разрабатывала",
+            "внедряла",
+            "проектировала",
+            "реализовывала",
+        ],
+    ),
+    (
+        "помогала",
+        &[
+            "содействовала",
+            "обеспечивала",
+            "консультировала",
+            "наставляла",
+        ],
+    ),
+];
+
+struct VerbPattern {
+    regex: Regex,
+    weak_verb: &'static str,
+    suggestions: &'static [&'static str],
+}
+
+static VERB_PATTERNS: LazyLock<Vec<VerbPattern>> = LazyLock::new(|| {
+    WEAK_VERBS_EN
+        .iter()
+        .chain(WEAK_VERBS_RU.iter())
+        .filter_map(|&(weak, suggestions)| {
+            let pattern = format!(r"(?i)\b{}\b", regex::escape(&weak.to_lowercase()));
+            Regex::new(&pattern).ok().map(|re| VerbPattern {
+                regex: re,
+                weak_verb: weak,
+                suggestions,
+            })
+        })
+        .collect()
+});
+
+pub fn lint_action_verbs(text: &str) -> VerbLintResult {
+    let mut issues: Vec<VerbIssue> = Vec::new();
+
+    for (line_num, line) in text.lines().enumerate() {
+        let lower_line = line.to_lowercase();
+
+        for vp in VERB_PATTERNS.iter() {
+            if !lower_line.contains(&vp.weak_verb.to_lowercase()) {
+                continue;
+            }
+
+            if vp.regex.is_match(&lower_line) {
+                let already_reported = issues
+                    .iter()
+                    .any(|i| i.weak_verb == vp.weak_verb && i.line == (line_num as u32 + 1));
+
+                if !already_reported {
+                    issues.push(VerbIssue {
+                        weak_verb: vp.weak_verb.to_string(),
+                        line: line_num as u32 + 1,
+                        suggestions: vp.suggestions.iter().map(|s| s.to_string()).collect(),
+                    });
+                }
+            }
+        }
+    }
+
+    let total = issues.len() as u32;
+    VerbLintResult {
+        issues,
+        total_issues: total,
+    }
 }
 
 #[cfg(test)]
@@ -670,5 +961,90 @@ mod tests {
         let r = analyze_readability("");
         assert_eq!(r.score, 0);
         assert_eq!(r.word_count, 0);
+    }
+
+    #[test]
+    fn test_verb_linter_detects_weak_verbs_en() {
+        let text = "I worked on the project.\nI helped the team.\nI implemented the API.";
+        let result = lint_action_verbs(text);
+        assert_eq!(result.total_issues, 2);
+        assert!(result.issues.iter().any(|i| i.weak_verb == "worked"));
+        assert!(result.issues.iter().any(|i| i.weak_verb == "helped"));
+    }
+
+    #[test]
+    fn test_verb_linter_detects_weak_verbs_ru() {
+        let text = "Я делал фичи для проекта.\nРазрабатывал API.";
+        let result = lint_action_verbs(text);
+        assert!(result.total_issues >= 1);
+        assert!(result.issues.iter().any(|i| i.weak_verb == "делал"));
+    }
+
+    #[test]
+    fn test_verb_linter_no_false_positives() {
+        let text = "Engineered a distributed system.\nOptimized database queries.";
+        let result = lint_action_verbs(text);
+        assert_eq!(result.total_issues, 0);
+    }
+
+    #[test]
+    fn test_verb_linter_returns_suggestions() {
+        let text = "I used React for the frontend.";
+        let result = lint_action_verbs(text);
+        assert_eq!(result.total_issues, 1);
+        assert!(!result.issues[0].suggestions.is_empty());
+        assert!(result.issues[0]
+            .suggestions
+            .iter()
+            .any(|s| s == "leveraged"));
+    }
+
+    #[test]
+    fn test_readability_detects_bullets() {
+        let resume = "John Doe\njohn@example.com | +1 555-0123\n\n\
+                       SUMMARY\nSoftware engineer with 5 years of experience.\n\n\
+                       EXPERIENCE\nCompany A — Developer | 2020-2024\n\
+                       • Built web applications using React\n\
+                       • Optimized database queries\n\
+                       • Deployed services to AWS\n\
+                       • Mentored junior developers\n\
+                       • Wrote unit tests with Jest\n\n\
+                       EDUCATION\nBachelor of CS — MIT\n\n\
+                       SKILLS\nJavaScript, TypeScript, React, Node.js, Docker";
+        let r = analyze_readability(resume);
+        assert!(
+            r.positives.iter().any(|p| p.contains("bullet points")),
+            "Should detect bullet points"
+        );
+    }
+
+    #[test]
+    fn test_readability_detects_linkedin() {
+        let resume = "John Doe\njohn@example.com | linkedin.com/in/johndoe | +1 555\n\n\
+                       SUMMARY\nSoftware engineer.\n\n\
+                       EXPERIENCE\nCompany A.\n\n\
+                       EDUCATION\nMIT\n\n\
+                       SKILLS\nReact";
+        let r = analyze_readability(resume);
+        assert!(
+            r.positives.iter().any(|p| p.contains("LinkedIn")),
+            "Should detect LinkedIn profile"
+        );
+    }
+
+    #[test]
+    fn test_readability_detects_duplicates() {
+        let resume = "John Doe\njohn@example.com | +1 555-0123\n\n\
+                       SUMMARY\nSoftware engineer with experience.\n\n\
+                       EXPERIENCE\n\
+                       Built web applications using React and Node.js.\n\
+                       Built web applications using React and Node.js.\n\n\
+                       EDUCATION\nMIT\n\n\
+                       SKILLS\nReact";
+        let r = analyze_readability(resume);
+        assert!(
+            r.warnings.iter().any(|w| w.contains("duplicate")),
+            "Should detect duplicate lines"
+        );
     }
 }

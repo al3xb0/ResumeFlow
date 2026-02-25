@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { BarChart3, CheckCircle, XCircle, Loader2, Search } from "lucide-react";
@@ -6,6 +6,7 @@ import { useResumeStore, type AnalysisResult } from "../store/useResumeStore";
 import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
 import { ReadabilityPanel } from "./ReadabilityPanel";
+import { ActionVerbLinter } from "./ActionVerbLinter";
 
 export function AnalysisPanel() {
   const { t } = useTranslation();
@@ -22,7 +23,9 @@ export function AnalysisPanel() {
   const canAnalyze =
     resumeText.trim().length > 0 && jobDescription.trim().length > 0;
 
-  const handleAnalyze = useCallback(async () => {
+  const analyzeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const runAnalysis = useCallback(async () => {
     if (!canAnalyze) return;
     setIsAnalyzing(true);
 
@@ -40,13 +43,42 @@ export function AnalysisPanel() {
     }
   }, [canAnalyze, resumeText, jobDescription, toast, setAnalysisResult, setIsAnalyzing]);
 
+  useEffect(() => {
+    if (!canAnalyze) {
+      if (analysisResult) setAnalysisResult(null);
+      return;
+    }
+
+    if (analyzeRef.current) clearTimeout(analyzeRef.current);
+    analyzeRef.current = setTimeout(() => {
+      runAnalysis();
+    }, 800);
+
+    return () => {
+      if (analyzeRef.current) clearTimeout(analyzeRef.current);
+    };
+  }, [resumeText, jobDescription]);
+
+  const handleAnalyze = useCallback(async () => {
+    await runAnalysis();
+  }, [runAnalysis]);
+
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className="flex flex-col gap-6 pb-8">
       <div>
         <h2 className="text-base font-semibold text-foreground mb-3">
           {t("readability.title")}
         </h2>
         <ReadabilityPanel />
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div>
+        <h2 className="text-base font-semibold text-foreground mb-3">
+          {t("verbLinter.sectionTitle")}
+        </h2>
+        <ActionVerbLinter />
       </div>
 
       <div className="border-t border-border" />
@@ -88,7 +120,7 @@ export function AnalysisPanel() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-5 overflow-y-auto">
+        <div className="flex flex-col gap-5">
           <div className="flex items-center gap-6 bg-secondary/50 rounded-xl p-5">
             <ScoreRing score={analysisResult.matchScore} />
             <div className="flex flex-col gap-1">

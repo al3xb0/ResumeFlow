@@ -1,4 +1,10 @@
+use std::sync::LazyLock;
+
 use scraper::{Html, Selector};
+
+static RE_SPACES: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new(r"[ \t]+").unwrap());
+static RE_NEWLINES: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"\n{3,}").unwrap());
 
 pub async fn fetch_page_text(url: &str) -> Result<String, String> {
     if !url.starts_with("http://") && !url.starts_with("https://") {
@@ -134,17 +140,14 @@ fn collect_text_from_element(element: &scraper::ElementRef, skip_tags: &[&str]) 
 }
 
 fn clean_text(text: &str) -> String {
-    let re_spaces = regex::Regex::new(r"[ \t]+").unwrap();
-    let re_newlines = regex::Regex::new(r"\n{3,}").unwrap();
-
     let result: String = text
         .lines()
-        .map(|line| re_spaces.replace_all(line.trim(), " ").to_string())
+        .map(|line| RE_SPACES.replace_all(line.trim(), " ").to_string())
         .filter(|line| !line.is_empty())
         .collect::<Vec<_>>()
         .join("\n");
 
-    re_newlines.replace_all(&result, "\n\n").trim().to_string()
+    RE_NEWLINES.replace_all(&result, "\n\n").trim().to_string()
 }
 
 #[cfg(test)]

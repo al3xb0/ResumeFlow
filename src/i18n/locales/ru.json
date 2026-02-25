@@ -5,7 +5,8 @@
     "privacyBadge": "Все данные обрабатываются локально"
   },
   "nav": {
-    "import": "Импорт резюме",
+    "import": "Импорт",
+    "editor": "Редактор",
     "analyze": "Анализ",
     "settings": "Настройки"
   },
@@ -55,6 +56,31 @@
     "warnings": "Предупреждения",
     "positives": "Хорошо",
     "noResult": "Импортируйте резюме для проверки качества распознавания."
+  },
+  "editor": {
+    "title": "Редактор резюме",
+    "sectionSummary": "О себе",
+    "sectionExperience": "Опыт работы",
+    "sectionEducation": "Образование",
+    "sectionSkills": "Навыки",
+    "sectionCustom": "Прочее",
+    "sectionTitlePlaceholder": "Название раздела...",
+    "contentPlaceholder": "Напишите содержимое раздела...",
+    "addSection": "Добавить раздел",
+    "removeSection": "Удалить раздел",
+    "moveUp": "Вверх",
+    "moveDown": "Вниз",
+    "syncToResume": "Синхронизировать",
+    "synced": "Резюме синхронизировано для анализа",
+    "empty": "Добавьте разделы, чтобы начать работу над резюме."
+  },
+  "verbLinter": {
+    "sectionTitle": "Проверка глаголов",
+    "title": "Обнаружены слабые глаголы",
+    "allGood": "Отлично — все глаголы действия сильные!",
+    "line": "Строка",
+    "clickToCopy": "Нажмите, чтобы скопировать",
+    "copied": "\"{{word}}\" скопировано"
   },
   "common": {
     "loading": "Загрузка...",

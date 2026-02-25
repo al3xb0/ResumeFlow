@@ -34,7 +34,7 @@ export function ResumeImport() {
 
       if (selected) {
         setIsExtracting(true);
-        const filePath = typeof selected === "string" ? selected : selected;
+        const filePath = selected;
         const fileName = filePath.split(/[\\/]/).pop() ?? "document.pdf";
         setResumeFileName(fileName);
 

@@ -5,7 +5,8 @@
     "privacyBadge": "All data processed locally"
   },
   "nav": {
-    "import": "Import Resume",
+    "import": "Import",
+    "editor": "Editor",
     "analyze": "Analysis",
     "settings": "Settings"
   },
@@ -55,6 +56,31 @@
     "warnings": "Warnings",
     "positives": "Good",
     "noResult": "Import a resume to check parse quality."
+  },
+  "editor": {
+    "title": "Resume Editor",
+    "sectionSummary": "Summary",
+    "sectionExperience": "Experience",
+    "sectionEducation": "Education",
+    "sectionSkills": "Skills",
+    "sectionCustom": "Custom",
+    "sectionTitlePlaceholder": "Section title...",
+    "contentPlaceholder": "Write your content here...",
+    "addSection": "Add section",
+    "removeSection": "Remove section",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "syncToResume": "Sync",
+    "synced": "Resume synced to analysis",
+    "empty": "Add sections to start building your resume."
+  },
+  "verbLinter": {
+    "sectionTitle": "Action Verb Check",
+    "title": "Weak verbs detected",
+    "allGood": "Great — all action verbs are strong!",
+    "line": "Line",
+    "clickToCopy": "Click to copy",
+    "copied": "\"{{word}}\" copied"
   },
   "common": {
     "loading": "Loading...",

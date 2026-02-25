@@ -22,7 +22,7 @@ Most ATS checkers are SaaS tools that upload your resume to their servers, charg
 - **Fast** — native desktop performance, not a slow web app. PDF parsing + keyword analysis in milliseconds.
 - **Multilingual** — interface available in English, Russian, and Polish.
 
-You drop in your resume (PDF or plain text), paste a job description (or grab it from a URL), and ResumeFlow instantly shows which keywords you're missing, how well your resume matches the listing, and whether the PDF actually parsed correctly.
+You drop in your resume (PDF or plain text), paste a job description (or grab it from a URL), and ResumeFlow instantly shows which keywords you're missing, how well your resume matches the listing, flags weak action verbs, and whether the PDF actually parsed correctly. You can also edit your resume in a built-in block editor with live analysis feedback.
 
 ## Features
 
@@ -30,9 +30,12 @@ You drop in your resume (PDF or plain text), paste a job description (or grab it
 | --- | --- |
 | **Resume import** | Upload a PDF or paste text directly |
 | **Job description input** | Paste text or fetch from any URL |
+| **Block editor** | Section-based resume editor with drag-to-reorder, auto-sync to analysis |
 | **Keyword matching** | Dictionary-based analysis of 150+ tech skills, frameworks, and tools |
 | **Match score** | Weighted percentage showing how well your resume fits the job |
+| **Action verb linter** | Detects weak verbs ("worked", "helped") and suggests stronger replacements |
 | **Readability check** | Detects broken PDF extraction, missing sections, garbled text, word count |
+| **Live analysis** | All panels update automatically as you type (debounced) |
 | **Dark theme** | Easy on the eyes, always |
 | **i18n** | English, Russian, Polish |
 
@@ -57,7 +60,7 @@ Builds are published automatically via GitHub Actions for **Windows**. **macOS**
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+
-- [Rust](https://www.rust-lang.org/tools/install) 1.70+
+- [Rust](https://www.rust-lang.org/tools/install) 1.80+
 - [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS
 
 ### Development

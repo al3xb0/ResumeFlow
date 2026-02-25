@@ -5,7 +5,8 @@
     "privacyBadge": "Wszystkie dane przetwarzane lokalnie"
   },
   "nav": {
-    "import": "Importuj CV",
+    "import": "Import",
+    "editor": "Edytor",
     "analyze": "Analiza",
     "settings": "Ustawienia"
   },
@@ -55,6 +56,31 @@
     "warnings": "Ostrzeżenia",
     "positives": "Dobrze",
     "noResult": "Zaimportuj CV, aby sprawdzić jakość odczytu."
+  },
+  "editor": {
+    "title": "Edytor CV",
+    "sectionSummary": "Podsumowanie",
+    "sectionExperience": "Doświadczenie",
+    "sectionEducation": "Wykształcenie",
+    "sectionSkills": "Umiejętności",
+    "sectionCustom": "Inne",
+    "sectionTitlePlaceholder": "Tytuł sekcji...",
+    "contentPlaceholder": "Napisz treść sekcji...",
+    "addSection": "Dodaj sekcję",
+    "removeSection": "Usuń sekcję",
+    "moveUp": "W górę",
+    "moveDown": "W dół",
+    "syncToResume": "Synchronizuj",
+    "synced": "CV zsynchronizowane do analizy",
+    "empty": "Dodaj sekcje, aby rozpocząć tworzenie CV."
+  },
+  "verbLinter": {
+    "sectionTitle": "Kontrola czasowników",
+    "title": "Wykryto słabe czasowniki",
+    "allGood": "Świetnie — wszystkie czasowniki są mocne!",
+    "line": "Linia",
+    "clickToCopy": "Kliknij, aby skopiować",
+    "copied": "\"{{word}}\" skopiowano"
   },
   "common": {
     "loading": "Ładowanie...",
