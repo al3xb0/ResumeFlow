@@ -1,0 +1,72 @@
+{
+  "app": {
+    "name": "ResumeFlow",
+    "tagline": "Optymalizator ATS z pełną prywatnością",
+    "privacyBadge": "Wszystkie dane przetwarzane lokalnie"
+  },
+  "nav": {
+    "import": "Importuj CV",
+    "analyze": "Analiza",
+    "settings": "Ustawienia"
+  },
+  "import": {
+    "title": "Zaimportuj swoje CV",
+    "description": "Prześlij plik PDF z CV lub wklej tekst bezpośrednio.",
+    "dropzone": "Przeciągnij i upuść plik PDF tutaj lub kliknij, aby przeglądać",
+    "browse": "Przeglądaj pliki",
+    "orPasteText": "Lub wklej tekst CV",
+    "resumeTextPlaceholder": "Wklej tekst swojego CV tutaj...",
+    "fileSelected": "Plik wybrany",
+    "extracting": "Wyodrębnianie tekstu...",
+    "extracted": "Tekst wyodrębniony pomyślnie",
+    "extractionError": "Nie udało się wyodrębnić tekstu z pliku",
+    "clear": "Wyczyść"
+  },
+  "job": {
+    "title": "Opis stanowiska",
+    "description": "Wklej ogłoszenie o pracę, do którego chcesz dostosować swoje CV.",
+    "placeholder": "Wklej pełny opis stanowiska tutaj...",
+    "tabText": "Wklej tekst",
+    "tabUrl": "Pobierz z URL",
+    "urlPlaceholder": "https://example.com/job-posting",
+    "fetchUrl": "Pobierz",
+    "fetchingUrl": "Pobieranie...",
+    "urlError": "Nie udało się pobrać opisu stanowiska",
+    "urlSuccess": "Opis stanowiska pobrany pomyślnie"
+  },
+  "analysis": {
+    "title": "Wyniki analizy",
+    "matchScore": "Wynik dopasowania",
+    "foundKeywords": "Znalezione słowa kluczowe",
+    "missingKeywords": "Brakujące słowa kluczowe",
+    "noResults": "Zaimportuj CV i dodaj opis stanowiska, aby zobaczyć analizę.",
+    "analyze": "Analizuj dopasowanie",
+    "analyzing": "Analizowanie...",
+    "totalKeywords": "Łączna liczba słów kluczowych",
+    "matched": "Dopasowane",
+    "missing": "Brakujące"
+  },
+  "readability": {
+    "title": "Jakość odczytu CV",
+    "score": "Ocena odczytu",
+    "wordCount": "Wykrytych słów",
+    "sectionsFound": "Znalezione sekcje",
+    "sectionsMissing": "Niewykryte sekcje",
+    "warnings": "Ostrzeżenia",
+    "positives": "Dobrze",
+    "noResult": "Zaimportuj CV, aby sprawdzić jakość odczytu."
+  },
+  "common": {
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "success": "Sukces",
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "close": "Zamknij"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский",
+    "pl": "Polski"
+  }
+}

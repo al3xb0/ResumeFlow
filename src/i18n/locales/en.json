@@ -1,0 +1,72 @@
+{
+  "app": {
+    "name": "ResumeFlow",
+    "tagline": "Privacy-First ATS Optimizer",
+    "privacyBadge": "All data processed locally"
+  },
+  "nav": {
+    "import": "Import Resume",
+    "analyze": "Analysis",
+    "settings": "Settings"
+  },
+  "import": {
+    "title": "Import Your Resume",
+    "description": "Upload a PDF file with your resume, or paste the text directly.",
+    "dropzone": "Drag & drop a PDF file here, or click to browse",
+    "browse": "Browse Files",
+    "orPasteText": "Or paste resume text",
+    "resumeTextPlaceholder": "Paste your resume text here...",
+    "fileSelected": "File selected",
+    "extracting": "Extracting text...",
+    "extracted": "Text extracted successfully",
+    "extractionError": "Failed to extract text from the file",
+    "clear": "Clear"
+  },
+  "job": {
+    "title": "Job Description",
+    "description": "Paste the job posting you want to tailor your resume for.",
+    "placeholder": "Paste the full job description here...",
+    "tabText": "Paste text",
+    "tabUrl": "Parse from URL",
+    "urlPlaceholder": "https://example.com/job-posting",
+    "fetchUrl": "Fetch",
+    "fetchingUrl": "Fetching...",
+    "urlError": "Failed to fetch job description",
+    "urlSuccess": "Job description fetched successfully"
+  },
+  "analysis": {
+    "title": "Analysis Results",
+    "matchScore": "Match Score",
+    "foundKeywords": "Found Keywords",
+    "missingKeywords": "Missing Keywords",
+    "noResults": "Import a resume and add a job description to see the analysis.",
+    "analyze": "Analyze Match",
+    "analyzing": "Analyzing...",
+    "totalKeywords": "Total Keywords",
+    "matched": "Matched",
+    "missing": "Missing"
+  },
+  "readability": {
+    "title": "Resume Parse Quality",
+    "score": "Parse Score",
+    "wordCount": "Words detected",
+    "sectionsFound": "Sections found",
+    "sectionsMissing": "Sections not detected",
+    "warnings": "Warnings",
+    "positives": "Good",
+    "noResult": "Import a resume to check parse quality."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Русский",
+    "pl": "Polski"
+  }
+}
