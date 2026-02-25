@@ -25,7 +25,10 @@ fn extract_pdf(file_path: &str) -> Result<String, String> {
     let cleaned = clean_extracted_text(&text);
 
     if cleaned.is_empty() {
-        return Err("The PDF appears to contain no extractable text. It may be a scanned document.".to_string());
+        return Err(
+            "The PDF appears to contain no extractable text. It may be a scanned document."
+                .to_string(),
+        );
     }
 
     Ok(cleaned)

@@ -29,7 +29,10 @@ pub async fn fetch_page_text(url: &str) -> Result<String, String> {
     let text = extract_text_from_html(&html_text);
 
     if text.trim().is_empty() {
-        return Err("Could not extract text from the page. The page may require JavaScript to load.".to_string());
+        return Err(
+            "Could not extract text from the page. The page may require JavaScript to load."
+                .to_string(),
+        );
     }
 
     Ok(text)
@@ -39,8 +42,7 @@ fn extract_text_from_html(html: &str) -> String {
     let document = Html::parse_document(html);
 
     let remove_selectors = [
-        "script", "style", "nav", "header", "footer",
-        "noscript", "svg", "img", "video", "audio",
+        "script", "style", "nav", "header", "footer", "noscript", "svg", "img", "video", "audio",
         "iframe", "form", "button", "input",
     ];
 
@@ -80,10 +82,7 @@ fn extract_text_from_html(html: &str) -> String {
     String::new()
 }
 
-fn collect_text_from_element(
-    element: &scraper::ElementRef,
-    skip_tags: &[&str],
-) -> String {
+fn collect_text_from_element(element: &scraper::ElementRef, skip_tags: &[&str]) -> String {
     let mut parts: Vec<String> = Vec::new();
 
     for node in element.children() {
@@ -104,8 +103,20 @@ fn collect_text_from_element(
                     if !child_text.trim().is_empty() {
                         let is_block = matches!(
                             tag,
-                            "div" | "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
-                                | "li" | "ul" | "ol" | "br" | "section" | "tr"
+                            "div"
+                                | "p"
+                                | "h1"
+                                | "h2"
+                                | "h3"
+                                | "h4"
+                                | "h5"
+                                | "h6"
+                                | "li"
+                                | "ul"
+                                | "ol"
+                                | "br"
+                                | "section"
+                                | "tr"
                         );
                         if is_block {
                             parts.push(format!("\n{}", child_text));
@@ -163,7 +174,10 @@ mod tests {
         assert!(text.contains("TypeScript"), "Should contain TypeScript");
         assert!(text.contains("React"), "Should contain React");
         assert!(text.contains("Node.js"), "Should contain Node.js");
-        assert!(!text.contains("Menu items"), "Should not contain nav content");
+        assert!(
+            !text.contains("Menu items"),
+            "Should not contain nav content"
+        );
     }
 
     #[test]

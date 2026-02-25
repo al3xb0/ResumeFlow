@@ -25,6 +25,41 @@
   --radius: 0.5rem;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --animate-in: enter 0.3s ease-out;
+  --animate-slide-in: slide-in-right 0.3s ease-out;
+  --animate-fade-out: fade-out 0.2s ease-in forwards;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 * {
@@ -35,4 +70,29 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+}
+
+.animate-in {
+  animation: var(--animate-in);
+}
+
+.slide-in-from-right-full {
+  animation: var(--animate-slide-in);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
 }

@@ -11,38 +11,173 @@ fn normalize(text: &str) -> String {
 }
 
 const TECH_KEYWORDS: &[&str] = &[
-    "javascript", "typescript", "python", "rust", "go", "golang", "java", "c#",
-    "c++", "ruby", "php", "swift", "kotlin", "scala", "elixir", "dart",
-    "lua", "r", "solidity", "sql", "graphql", "html", "html5", "css", "css3",
-    "sass", "less",
-    "react", "next.js", "nextjs", "vue", "vue.js", "nuxt", "angular",
-    "svelte", "remix", "gatsby", "tailwind", "tailwindcss", "bootstrap",
-    "material ui", "chakra ui", "shadcn", "redux", "zustand", "mobx",
-    "react query", "tanstack", "webpack", "vite", "esbuild", "rollup",
+    "javascript",
+    "typescript",
+    "python",
+    "rust",
+    "go",
+    "golang",
+    "java",
+    "c#",
+    "c++",
+    "ruby",
+    "php",
+    "swift",
+    "kotlin",
+    "scala",
+    "elixir",
+    "dart",
+    "lua",
+    "r",
+    "solidity",
+    "sql",
+    "graphql",
+    "html",
+    "html5",
+    "css",
+    "css3",
+    "sass",
+    "less",
+    "react",
+    "next.js",
+    "nextjs",
+    "vue",
+    "vue.js",
+    "nuxt",
+    "angular",
+    "svelte",
+    "remix",
+    "gatsby",
+    "tailwind",
+    "tailwindcss",
+    "bootstrap",
+    "material ui",
+    "chakra ui",
+    "shadcn",
+    "redux",
+    "zustand",
+    "mobx",
+    "react query",
+    "tanstack",
+    "webpack",
+    "vite",
+    "esbuild",
+    "rollup",
     "storybook",
-    "node.js", "nodejs", "express", "fastapi", "flask", "django", "nestjs",
-    "spring", "spring boot", "rails", "laravel", "actix", "axum", "gin",
-    "fiber", "hono", "trpc", "rest", "restful", "grpc",
-    "postgresql", "postgres", "mysql", "mariadb", "sqlite", "mongodb",
-    "redis", "dynamodb", "cassandra", "elasticsearch", "clickhouse",
-    "supabase", "firebase", "prisma", "drizzle", "typeorm", "sequelize",
-    "sqlx", "knex",
-    "docker", "kubernetes", "k8s", "terraform", "ansible", "aws", "gcp",
-    "azure", "vercel", "netlify", "heroku", "digitalocean", "cloudflare",
-    "nginx", "caddy", "ci/cd", "github actions", "gitlab ci", "jenkins",
+    "node.js",
+    "nodejs",
+    "express",
+    "fastapi",
+    "flask",
+    "django",
+    "nestjs",
+    "spring",
+    "spring boot",
+    "rails",
+    "laravel",
+    "actix",
+    "axum",
+    "gin",
+    "fiber",
+    "hono",
+    "trpc",
+    "rest",
+    "restful",
+    "grpc",
+    "postgresql",
+    "postgres",
+    "mysql",
+    "mariadb",
+    "sqlite",
+    "mongodb",
+    "redis",
+    "dynamodb",
+    "cassandra",
+    "elasticsearch",
+    "clickhouse",
+    "supabase",
+    "firebase",
+    "prisma",
+    "drizzle",
+    "typeorm",
+    "sequelize",
+    "sqlx",
+    "knex",
+    "docker",
+    "kubernetes",
+    "k8s",
+    "terraform",
+    "ansible",
+    "aws",
+    "gcp",
+    "azure",
+    "vercel",
+    "netlify",
+    "heroku",
+    "digitalocean",
+    "cloudflare",
+    "nginx",
+    "caddy",
+    "ci/cd",
+    "github actions",
+    "gitlab ci",
+    "jenkins",
     "circleci",
-    "git", "github", "gitlab", "bitbucket", "jira", "confluence",
-    "figma", "postman", "linux", "unix",
-    "jest", "vitest", "cypress", "playwright", "selenium", "mocha",
-    "pytest", "testing library", "react testing library",
-    "pandas", "numpy", "pytorch", "tensorflow", "scikit-learn",
-    "kafka", "rabbitmq", "bullmq", "sqs", "nats",
-    "blockchain", "ethereum", "solana", "web3", "smart contracts",
-    "ethers.js", "hardhat", "foundry",
-    "react native", "flutter", "ios", "android", "swiftui",
+    "git",
+    "github",
+    "gitlab",
+    "bitbucket",
+    "jira",
+    "confluence",
+    "figma",
+    "postman",
+    "linux",
+    "unix",
+    "jest",
+    "vitest",
+    "cypress",
+    "playwright",
+    "selenium",
+    "mocha",
+    "pytest",
+    "testing library",
+    "react testing library",
+    "pandas",
+    "numpy",
+    "pytorch",
+    "tensorflow",
+    "scikit-learn",
+    "kafka",
+    "rabbitmq",
+    "bullmq",
+    "sqs",
+    "nats",
+    "blockchain",
+    "ethereum",
+    "solana",
+    "web3",
+    "smart contracts",
+    "ethers.js",
+    "hardhat",
+    "foundry",
+    "react native",
+    "flutter",
+    "ios",
+    "android",
+    "swiftui",
     "jetpack compose",
-    "microservices", "monorepo", "websocket", "websockets", "ssr", "ssg",
-    "api", "oauth", "jwt", "agile", "scrum", "kanban",
+    "microservices",
+    "monorepo",
+    "websocket",
+    "websockets",
+    "ssr",
+    "ssg",
+    "api",
+    "oauth",
+    "jwt",
+    "agile",
+    "scrum",
+    "kanban",
 ];
 
 const AMBIGUOUS_LANG: &[&str] = &["go", "r"];
@@ -68,10 +203,8 @@ fn extract_keywords(job_text: &str) -> Vec<Keyword> {
             continue;
         }
 
-        if AMBIGUOUS_LANG.contains(&needle.as_str()) {
-            if !is_tech_mention(&needle, &norm_job) {
-                continue;
-            }
+        if AMBIGUOUS_LANG.contains(&needle.as_str()) && !is_tech_mention(&needle, &norm_job) {
+            continue;
         }
 
         let pattern = format!(
@@ -246,11 +379,30 @@ fn keyword_in_text(needle: &str, haystack: &str) -> bool {
 }
 
 const EXPECTED_SECTIONS: &[(&str, &[&str])] = &[
-    ("contact",     &["email", "phone", "linkedin", "github", "@"]),
-    ("summary",     &["summary", "about", "objective", "profile", "о себе"]),
-    ("experience",  &["experience", "work", "employment", "professional", "опыт"]),
-    ("education",   &["education", "university", "bachelor", "master", "degree", "образование"]),
-    ("skills",      &["skills", "technologies", "tech stack", "навыки"]),
+    ("contact", &["email", "phone", "linkedin", "github", "@"]),
+    (
+        "summary",
+        &["summary", "about", "objective", "profile", "о себе"],
+    ),
+    (
+        "experience",
+        &["experience", "work", "employment", "professional", "опыт"],
+    ),
+    (
+        "education",
+        &[
+            "education",
+            "university",
+            "bachelor",
+            "master",
+            "degree",
+            "образование",
+        ],
+    ),
+    (
+        "skills",
+        &["skills", "technologies", "tech stack", "навыки"],
+    ),
 ];
 
 #[derive(serde::Serialize)]
@@ -293,7 +445,10 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
         score += 8;
         warnings.push(format!("{} words — resume seems short", word_count));
     } else {
-        warnings.push(format!("{} words — resume is very short, consider adding more detail", word_count));
+        warnings.push(format!(
+            "{} words — resume is very short, consider adding more detail",
+            word_count
+        ));
     }
 
     for &(section_name, markers) in EXPECTED_SECTIONS {
@@ -315,7 +470,10 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
         warnings.push("Very few line breaks — text may be poorly parsed".into());
     }
 
-    if Regex::new(r"[\w.+-]+@[\w-]+\.[\w.]+").unwrap().is_match(text) {
+    if Regex::new(r"[\w.+-]+@[\w-]+\.[\w.]+")
+        .unwrap()
+        .is_match(text)
+    {
         score += 5;
         positives.push("Email detected".into());
     } else {
@@ -328,9 +486,10 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
     }
 
     let total_chars = text.chars().count();
-    let weird_chars = text.chars().filter(|c| {
-        !c.is_ascii() && !c.is_alphabetic()
-    }).count();
+    let weird_chars = text
+        .chars()
+        .filter(|c| !c.is_ascii() && !c.is_alphabetic())
+        .count();
     let weird_ratio = if total_chars > 0 {
         weird_chars as f64 / total_chars as f64
     } else {
@@ -344,8 +503,9 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
         positives.push("Clean text extraction".into());
     }
 
-    let single_letter_words = text.split_whitespace()
-        .filter(|w| w.len() == 1 && w.chars().next().map_or(false, |c| c.is_alphabetic()))
+    let single_letter_words = text
+        .split_whitespace()
+        .filter(|w| w.len() == 1 && w.chars().next().is_some_and(|c| c.is_alphabetic()))
         .count();
     if single_letter_words > 3 {
         warnings.push(format!(
@@ -408,18 +568,31 @@ mod tests {
                        English B2, Polish C1.";
         let result = analyze_match(resume, job);
 
-        let all: Vec<String> = result.found_keywords.iter()
+        let all: Vec<String> = result
+            .found_keywords
+            .iter()
             .chain(result.missing_keywords.iter())
             .map(|s| s.to_lowercase())
             .collect();
 
         // These should NOT appear — they are not tech skills
-        for bad in &["cet", "cest", "europe", "modern web", "ownership",
-                     "take ownership", "willingness to learn", "fluent english",
-                     "in-house tooling", "production issues", "go"] {
+        for bad in &[
+            "cet",
+            "cest",
+            "europe",
+            "modern web",
+            "ownership",
+            "take ownership",
+            "willingness to learn",
+            "fluent english",
+            "in-house tooling",
+            "production issues",
+            "go",
+        ] {
             assert!(
                 !all.contains(&bad.to_string()),
-                "False positive keyword: '{}'", bad
+                "False positive keyword: '{}'",
+                bad
             );
         }
 
@@ -427,7 +600,8 @@ mod tests {
         for good in &["typescript", "react", "node.js", "postgresql"] {
             assert!(
                 all.contains(&good.to_string()),
-                "Missing expected keyword: '{}'", good
+                "Missing expected keyword: '{}'",
+                good
             );
         }
     }
@@ -437,11 +611,16 @@ mod tests {
         // When "Go" appears in a tech list, it should be detected
         let job = "Our stack: Go, TypeScript, PostgreSQL, React";
         let result = analyze_match("I work with Go and TypeScript", job);
-        let all: Vec<String> = result.found_keywords.iter()
+        let all: Vec<String> = result
+            .found_keywords
+            .iter()
             .chain(result.missing_keywords.iter())
             .map(|s| s.to_lowercase())
             .collect();
-        assert!(all.contains(&"go".to_string()), "Go should be detected in tech list");
+        assert!(
+            all.contains(&"go".to_string()),
+            "Go should be detected in tech list"
+        );
     }
 
     #[test]
@@ -477,7 +656,11 @@ mod tests {
                        EDUCATION\nBachelor of CS — MIT\n\n\
                        SKILLS\nJavaScript, TypeScript, React, Node.js, Docker";
         let r = analyze_readability(resume);
-        assert!(r.score >= 50, "Good resume should score >= 50, got {}", r.score);
+        assert!(
+            r.score >= 50,
+            "Good resume should score >= 50, got {}",
+            r.score
+        );
         assert!(r.sections_found.len() >= 3);
         assert!(!r.positives.is_empty());
     }

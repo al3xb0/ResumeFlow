@@ -4,13 +4,12 @@
 
 No cloud, no subscriptions, no data collection. Your resume never leaves your machine.
 
+[![CI](https://github.com/al3xb0/ResumeFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/al3xb0/ResumeFlow/actions/workflows/ci.yml)
 [![Tauri](https://img.shields.io/badge/Tauri-2-blue?logo=tauri)](https://v2.tauri.app)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
 [![Rust](https://img.shields.io/badge/Rust-2021-orange?logo=rust)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Download](https://img.shields.io/badge/Download-Latest%20Build-brightgreen?logo=windows)](https://github.com/AeliGo/ResumeFlow/releases)
-
-</div>
+[![Download](https://img.shields.io/badge/Download-Latest%20Build-brightgreen?logo=windows)](https://github.com/al3xb0/ResumeFlow/releases)
 
 ---
 
@@ -28,7 +27,7 @@ You drop in your resume (PDF or plain text), paste a job description (or grab it
 ## Features
 
 | Feature | Description |
-|---|---|
+| --- | --- |
 | **Resume import** | Upload a PDF or paste text directly |
 | **Job description input** | Paste text or fetch from any URL |
 | **Keyword matching** | Dictionary-based analysis of 150+ tech skills, frameworks, and tools |
@@ -41,12 +40,12 @@ You drop in your resume (PDF or plain text), paste a job description (or grab it
 
 Grab the latest installer from the [**Releases page**](https://github.com/al3xb0/ResumeFlow/releases).
 
-Available for Windows. macOS and Linux builds are coming — or you can build from source right now.
+Builds are published automatically via GitHub Actions for **Windows**. **macOS**, and **Linux** builds are coming soon.
 
 ## Tech stack
 
 | Layer | Technology |
-|-------|-----------|
+| ------- | ----------- |
 | Desktop framework | [Tauri 2](https://v2.tauri.app) |
 | Frontend | React 19, TypeScript 5.8, Tailwind CSS 4 |
 | State management | Zustand 5 |
@@ -87,7 +86,7 @@ cargo test
 
 ## Project structure
 
-```
+```text
 ├── src/                    # React frontend
 │   ├── components/         # UI components
 │   ├── store/              # Zustand store
@@ -102,18 +101,11 @@ cargo test
 └── package.json
 ```
 
-## Roadmap
-
-- [ ] AI-powered suggestions (local LLM, no cloud)
-- [ ] Built-in resume editor with live feedback
-- [ ] Export optimized resume as PDF
-- [ ] DOCX support
-- [ ] Drag & drop import
-- [ ] macOS & Linux builds
-
 ## Contributing
 
-ResumeFlow is open source and contributions are welcome. Feel free to open issues, suggest features, or submit pull requests.
+ResumeFlow is open source and contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
+
+Feel free to open issues, suggest features, or submit pull requests.
 
 ## License
 

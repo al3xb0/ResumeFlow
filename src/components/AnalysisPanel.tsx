@@ -1,12 +1,15 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { BarChart3, CheckCircle, XCircle, Loader2, Search } from "lucide-react";
 import { useResumeStore, type AnalysisResult } from "../store/useResumeStore";
+import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
 import { ReadabilityPanel } from "./ReadabilityPanel";
 
 export function AnalysisPanel() {
   const { t } = useTranslation();
+  const toast = useToast();
   const {
     resumeText,
     jobDescription,
@@ -19,7 +22,7 @@ export function AnalysisPanel() {
   const canAnalyze =
     resumeText.trim().length > 0 && jobDescription.trim().length > 0;
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!canAnalyze) return;
     setIsAnalyzing(true);
 
@@ -31,10 +34,11 @@ export function AnalysisPanel() {
       setAnalysisResult(result);
     } catch (err) {
       console.error("Analysis error:", err);
+      toast.error(String(err));
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [canAnalyze, resumeText, jobDescription, toast, setAnalysisResult, setIsAnalyzing]);
 
   return (
     <div className="flex flex-col gap-6 h-full">

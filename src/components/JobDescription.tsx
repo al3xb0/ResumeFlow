@@ -1,11 +1,14 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Globe, Type, Loader2 } from "lucide-react";
 import { useResumeStore } from "../store/useResumeStore";
+import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
 
 export function JobDescription() {
   const { t } = useTranslation();
+  const toast = useToast();
   const {
     jobDescription,
     setJobDescription,
@@ -19,7 +22,7 @@ export function JobDescription() {
     setUrlError,
   } = useResumeStore();
 
-  const handleFetchUrl = async () => {
+  const handleFetchUrl = useCallback(async () => {
     if (!jobUrl.trim()) return;
     setIsFetchingUrl(true);
     setUrlError(null);
@@ -28,12 +31,14 @@ export function JobDescription() {
       const text = await invoke<string>("fetch_job_url", { url: jobUrl });
       setJobDescription(text);
       setJobInputMode("text");
+      toast.success(t("job.urlSuccess"));
     } catch (err) {
       setUrlError(String(err));
+      toast.error(t("job.urlError"));
     } finally {
       setIsFetchingUrl(false);
     }
-  };
+  }, [jobUrl, t, toast, setIsFetchingUrl, setUrlError, setJobDescription, setJobInputMode]);
 
   return (
     <div className="flex flex-col gap-4">

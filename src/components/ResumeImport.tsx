@@ -1,12 +1,15 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { FileUp, X, Loader2 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useResumeStore } from "../store/useResumeStore";
+import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
 
 export function ResumeImport() {
   const { t } = useTranslation();
+  const toast = useToast();
   const {
     resumeText,
     resumeFileName,
@@ -17,7 +20,7 @@ export function ResumeImport() {
     clearResume,
   } = useResumeStore();
 
-  const handleFileSelect = async () => {
+  const handleFileSelect = useCallback(async () => {
     try {
       const selected = await open({
         multiple: false,
@@ -40,11 +43,12 @@ export function ResumeImport() {
             filePath: filePath,
           });
           setResumeText(text);
+          toast.success(t("import.extracted"));
         } catch (err) {
           console.error("PDF extraction error:", err);
           setResumeText("");
           setResumeFileName(null);
-          alert(t("import.extractionError") + "\n" + String(err));
+          toast.error(t("import.extractionError"));
         } finally {
           setIsExtracting(false);
         }
@@ -52,7 +56,7 @@ export function ResumeImport() {
     } catch (err) {
       console.error("File dialog error:", err);
     }
-  };
+  }, [t, toast, setIsExtracting, setResumeFileName, setResumeText]);
 
   return (
     <div className="flex flex-col gap-4">
