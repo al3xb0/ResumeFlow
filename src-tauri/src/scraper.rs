@@ -6,14 +6,38 @@ static RE_SPACES: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new(r"
 static RE_NEWLINES: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"\n{3,}").unwrap());
 
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+                           (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const REQUEST_TIMEOUT_SECS: u64 = 15;
+const MIN_MAIN_CONTENT_WORDS: usize = 30;
+
+const REMOVE_SELECTORS: &[&str] = &[
+    "script", "style", "nav", "header", "footer", "noscript", "svg", "img", "video", "audio",
+    "iframe", "form", "button", "input",
+];
+
+const MAIN_SELECTORS: &[&str] = &[
+    "main",
+    "article",
+    "[role=\"main\"]",
+    ".job-description",
+    ".job-details",
+    ".posting-body",
+    ".description",
+    "#job-description",
+    "#job-details",
+    ".job-content",
+    ".vacancy-description",
+];
+
 pub async fn fetch_page_text(url: &str) -> Result<String, String> {
     if !url.starts_with("http://") && !url.starts_with("https://") {
         return Err("URL must start with http:// or https://".to_string());
     }
 
     let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        .timeout(std::time::Duration::from_secs(15))
+        .user_agent(USER_AGENT)
+        .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT_SECS))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
@@ -47,31 +71,12 @@ pub async fn fetch_page_text(url: &str) -> Result<String, String> {
 fn extract_text_from_html(html: &str) -> String {
     let document = Html::parse_document(html);
 
-    let remove_selectors = [
-        "script", "style", "nav", "header", "footer", "noscript", "svg", "img", "video", "audio",
-        "iframe", "form", "button", "input",
-    ];
-
-    let main_selectors = [
-        "main",
-        "article",
-        "[role=\"main\"]",
-        ".job-description",
-        ".job-details",
-        ".posting-body",
-        ".description",
-        "#job-description",
-        "#job-details",
-        ".job-content",
-        ".vacancy-description",
-    ];
-
-    for sel_str in &main_selectors {
+    for sel_str in MAIN_SELECTORS {
         if let Ok(sel) = Selector::parse(sel_str) {
             if let Some(element) = document.select(&sel).next() {
-                let text = collect_text_from_element(&element, &remove_selectors);
+                let text = collect_text_from_element(&element, REMOVE_SELECTORS);
                 let cleaned = clean_text(&text);
-                if cleaned.split_whitespace().count() > 30 {
+                if cleaned.split_whitespace().count() > MIN_MAIN_CONTENT_WORDS {
                     return cleaned;
                 }
             }
@@ -80,7 +85,7 @@ fn extract_text_from_html(html: &str) -> String {
 
     if let Ok(body_sel) = Selector::parse("body") {
         if let Some(body) = document.select(&body_sel).next() {
-            let text = collect_text_from_element(&body, &remove_selectors);
+            let text = collect_text_from_element(&body, REMOVE_SELECTORS);
             return clean_text(&text);
         }
     }

@@ -18,12 +18,12 @@ function App() {
       <Header />
 
       <main className="flex flex-1 overflow-hidden">
-        <section className="w-1/2 border-r border-border overflow-y-auto flex flex-col">
-          <div className="flex border-b border-border sticky top-0 bg-background z-10">
+        <section className="w-1/2 border-r border-border flex flex-col">
+          <nav className="flex border-b border-border sticky top-0 bg-background z-10">
             <button
               onClick={() => setActiveTab("import")}
               className={cn(
-                "flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px",
+                "flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px select-none",
                 activeTab === "import"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -35,7 +35,7 @@ function App() {
             <button
               onClick={() => setActiveTab("editor")}
               className={cn(
-                "flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px",
+                "flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px select-none",
                 activeTab === "editor"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -44,12 +44,13 @@ function App() {
               <PenLine size={14} />
               {t("nav.editor")}
             </button>
-          </div>
+          </nav>
 
           <div className="flex-1 overflow-y-auto p-6">
             {activeTab === "import" ? (
               <div className="flex flex-col gap-8">
                 <ResumeImport />
+                <div className="border-t border-border" />
                 <JobDescription />
               </div>
             ) : (

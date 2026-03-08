@@ -21,7 +21,8 @@
     "extracting": "Extracting text...",
     "extracted": "Text extracted successfully",
     "extractionError": "Failed to extract text from the file",
-    "clear": "Clear"
+    "clear": "Clear",
+    "linksFound": "{{count}} link(s) detected in PDF"
   },
   "job": {
     "title": "Job Description",

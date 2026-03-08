@@ -27,6 +27,11 @@ export interface VerbLintResult {
   totalIssues: number;
 }
 
+export interface PdfLink {
+  url: string;
+  page: number;
+}
+
 export type JobInputMode = "text" | "url";
 
 interface ResumeState {
@@ -52,6 +57,9 @@ interface ResumeState {
   // Verb linter
   verbLintResult: VerbLintResult | null;
 
+  // PDF links
+  pdfLinks: PdfLink[];
+
   // Actions
   setResumeText: (text: string) => void;
   setResumeFileName: (name: string | null) => void;
@@ -65,6 +73,7 @@ interface ResumeState {
   setIsAnalyzing: (value: boolean) => void;
   setIsExtracting: (value: boolean) => void;
   setVerbLintResult: (result: VerbLintResult | null) => void;
+  setPdfLinks: (links: PdfLink[]) => void;
   clearResume: () => void;
   clearAll: () => void;
 }
@@ -82,6 +91,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
   isAnalyzing: false,
   isExtracting: false,
   verbLintResult: null,
+  pdfLinks: [],
 
   setResumeText: (text) => set({ resumeText: text }),
   setResumeFileName: (name) => set({ resumeFileName: name }),
@@ -95,6 +105,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
   setIsAnalyzing: (value) => set({ isAnalyzing: value }),
   setIsExtracting: (value) => set({ isExtracting: value }),
   setVerbLintResult: (result) => set({ verbLintResult: result }),
+  setPdfLinks: (links) => set({ pdfLinks: links }),
   clearResume: () =>
     set({
       resumeText: "",
@@ -102,6 +113,7 @@ export const useResumeStore = create<ResumeState>((set) => ({
       analysisResult: null,
       readabilityResult: null,
       verbLintResult: null,
+      pdfLinks: [],
     }),
   clearAll: () =>
     set({
@@ -112,5 +124,6 @@ export const useResumeStore = create<ResumeState>((set) => ({
       analysisResult: null,
       readabilityResult: null,
       verbLintResult: null,
+      pdfLinks: [],
     }),
 }));

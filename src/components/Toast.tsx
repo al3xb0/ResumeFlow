@@ -9,7 +9,7 @@ const icons = {
   info: <Info size={16} className="text-primary shrink-0" />,
 } as const;
 
-const styles = {
+const toastStyles = {
   success: "border-success/20 bg-success/5",
   error: "border-destructive/20 bg-destructive/5",
   warning: "border-warning/20 bg-warning/5",
@@ -25,14 +25,14 @@ function ToastItem({ toast }: { toast: Toast }) {
         "flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm",
         "animate-in slide-in-from-right-full duration-300",
         "max-w-sm w-full",
-        styles[toast.type]
+        toastStyles[toast.type]
       )}
     >
       {icons[toast.type]}
       <p className="text-sm text-foreground flex-1">{toast.message}</p>
       <button
         onClick={() => removeToast(toast.id)}
-        className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+        className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors shrink-0"
       >
         <X size={14} />
       </button>

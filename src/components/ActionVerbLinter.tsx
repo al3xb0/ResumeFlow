@@ -7,7 +7,6 @@ import {
   type VerbLintResult,
 } from "../store/useResumeStore";
 import { useToast } from "./Toast";
-import { cn } from "../lib/utils";
 
 export function ActionVerbLinter() {
   const { t } = useTranslation();
@@ -35,11 +34,17 @@ export function ActionVerbLinter() {
 
   const toast = useToast();
 
-  const handleCopySuggestion = useCallback((text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast.success(t("verbLinter.copied", { word: text }));
-    }).catch(() => {});
-  }, [toast, t]);
+  const handleCopySuggestion = useCallback(
+    (text: string) => {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          toast.success(t("verbLinter.copied", { word: text }));
+        })
+        .catch(() => {});
+    },
+    [toast, t]
+  );
 
   if (!verbLintResult || verbLintResult.totalIssues === 0) {
     if (resumeText.trim()) {
@@ -62,22 +67,22 @@ export function ActionVerbLinter() {
         <span className="text-sm font-medium text-foreground">
           {t("verbLinter.title")}
         </span>
-        <span className="text-xs text-muted-foreground">
-          ({verbLintResult.totalIssues})
+        <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold min-w-5 text-center bg-warning/15 text-warning">
+          {verbLintResult.totalIssues}
         </span>
       </div>
 
-      <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+      <div className="flex flex-col gap-2 max-h-75 overflow-y-auto">
         {verbLintResult.issues.map((issue, idx) => (
           <div
             key={`${issue.weakVerb}-${issue.line}-${idx}`}
-            className="flex flex-col gap-1.5 p-3 rounded-lg bg-warning/5 border border-warning/20"
+            className="flex flex-col gap-1.5 p-3 rounded-xl bg-warning/5 border border-warning/20"
           >
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
                 {t("verbLinter.line")} {issue.line}
               </span>
-              <span className="text-xs font-medium text-warning">
+              <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-warning/10 text-warning border border-warning/20">
                 &ldquo;{issue.weakVerb}&rdquo;
               </span>
             </div>
@@ -87,11 +92,7 @@ export function ActionVerbLinter() {
                 <button
                   key={suggestion}
                   onClick={() => handleCopySuggestion(suggestion)}
-                  className={cn(
-                    "px-2 py-0.5 rounded text-xs font-medium transition-colors",
-                    "bg-primary/10 text-primary border border-primary/20",
-                    "hover:bg-primary/20 cursor-pointer"
-                  )}
+                  className="px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
                   title={t("verbLinter.clickToCopy")}
                 >
                   {suggestion}

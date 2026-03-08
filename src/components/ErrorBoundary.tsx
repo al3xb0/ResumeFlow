@@ -37,13 +37,13 @@ export class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred. You can try reloading the app.
             </p>
             {this.state.error && (
-              <pre className="text-xs text-muted-foreground bg-secondary/50 rounded-lg p-3 w-full overflow-auto max-h-32 text-left">
+              <pre className="text-xs text-muted-foreground p-3 w-full overflow-auto max-h-32 text-left rounded-xl bg-secondary/50 border border-border">
                 {this.state.error.message}
               </pre>
             )}
             <button
               onClick={this.handleReset}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <RotateCcw size={14} />
               Try again

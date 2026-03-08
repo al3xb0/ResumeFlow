@@ -38,8 +38,8 @@ export function ReadabilityPanel() {
 
   if (!readabilityResult) {
     return (
-      <div className="flex flex-col items-center justify-center text-center p-6">
-        <Eye size={32} className="text-muted-foreground/30 mb-3" />
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <Eye size={32} className="text-muted-foreground/30" />
         <p className="text-xs text-muted-foreground">
           {t("readability.noResult")}
         </p>
@@ -56,10 +56,18 @@ export function ReadabilityPanel() {
     return "text-destructive";
   };
 
-  const getScoreBg = (s: number) => {
-    if (s >= 80) return "bg-success/10 border-success/20";
-    if (s >= 50) return "bg-warning/10 border-warning/20";
-    return "bg-destructive/10 border-destructive/20";
+  const getScoreVariant = (s: number): "success" | "warning" | "destructive" => {
+    if (s >= 80) return "success";
+    if (s >= 50) return "warning";
+    return "destructive";
+  };
+
+  const variant = getScoreVariant(score);
+
+  const scoreBg: Record<string, string> = {
+    success: "bg-success/10 border-success/20",
+    warning: "bg-warning/10 border-warning/20",
+    destructive: "bg-destructive/10 border-destructive/20",
   };
 
   return (
@@ -67,7 +75,7 @@ export function ReadabilityPanel() {
       <div
         className={cn(
           "flex items-center justify-between rounded-xl border p-4",
-          getScoreBg(score)
+          scoreBg[variant]
         )}
       >
         <div className="flex items-center gap-2">
@@ -97,10 +105,7 @@ export function ReadabilityPanel() {
           </div>
           <div className="flex flex-wrap gap-1">
             {sectionsFound.map((s, i) => (
-              <span
-                key={i}
-                className="px-2 py-0.5 rounded-md text-xs bg-success/10 text-success border border-success/20 capitalize"
-              >
+              <span key={i} className="px-2 py-0.5 rounded-md text-xs font-medium bg-success/10 text-success border border-success/20 capitalize">
                 {s}
               </span>
             ))}
@@ -118,10 +123,7 @@ export function ReadabilityPanel() {
           </div>
           <div className="flex flex-wrap gap-1">
             {sectionsMissing.map((s, i) => (
-              <span
-                key={i}
-                className="px-2 py-0.5 rounded-md text-xs bg-secondary text-muted-foreground border border-border capitalize"
-              >
+              <span key={i} className="px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-border capitalize">
                 {s}
               </span>
             ))}

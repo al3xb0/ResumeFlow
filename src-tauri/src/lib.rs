@@ -3,10 +3,16 @@ mod parser;
 mod scraper;
 
 use analysis::{AnalysisResult, ReadabilityResult, VerbLintResult};
+use parser::PdfLink;
 
 #[tauri::command]
 fn extract_pdf_text(file_path: String) -> Result<String, String> {
     parser::extract_text_from_pdf(&file_path)
+}
+
+#[tauri::command]
+fn extract_pdf_links(file_path: String) -> Result<Vec<PdfLink>, String> {
+    parser::extract_links_from_pdf(&file_path)
 }
 
 #[tauri::command]
@@ -36,6 +42,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             extract_pdf_text,
+            extract_pdf_links,
             analyze_resume,
             check_readability,
             fetch_job_url,

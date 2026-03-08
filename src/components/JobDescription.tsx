@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { Globe, Type, Loader2 } from "lucide-react";
+import { Globe, Type, Loader2, X } from "lucide-react";
 import { useResumeStore } from "../store/useResumeStore";
 import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
@@ -53,7 +53,7 @@ export function JobDescription() {
         <button
           onClick={() => setJobInputMode("text")}
           className={cn(
-            "flex items-center gap-1.5 flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 flex-1 justify-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
             jobInputMode === "text"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -65,7 +65,7 @@ export function JobDescription() {
         <button
           onClick={() => setJobInputMode("url")}
           className={cn(
-            "flex items-center gap-1.5 flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 flex-1 justify-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
             jobInputMode === "url"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -77,36 +77,65 @@ export function JobDescription() {
       </div>
 
       {jobInputMode === "text" ? (
-        <textarea
-          value={jobDescription}
-          onChange={(e) => setJobDescription(e.target.value)}
-          placeholder={t("job.placeholder")}
-          className={cn(
-            "w-full h-64 p-3 rounded-xl bg-secondary/50 border border-border",
-            "text-sm text-foreground placeholder:text-muted-foreground/50",
-            "resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
-            "transition-colors"
+        <div className="relative">
+          <textarea
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder={t("job.placeholder")}
+            className={cn(
+              "w-full h-64 p-3 pr-9 rounded-xl bg-secondary/50 border border-border",
+              "text-sm text-foreground placeholder:text-muted-foreground/50",
+              "resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
+              "transition-colors"
+            )}
+          />
+
+          {jobDescription && (
+            <button
+              onClick={() => setJobDescription("")}
+              className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              title={t("import.clear")}
+            >
+              <X size={14} />
+            </button>
           )}
-        />
+
+          {jobDescription && (
+            <p className="text-[11px] text-muted-foreground mt-1.5 text-right tabular-nums">
+              {jobDescription.trim().split(/\s+/).filter(Boolean).length} words
+            </p>
+          )}
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
-            <input
-              type="url"
-              value={jobUrl}
-              onChange={(e) => {
-                setJobUrl(e.target.value);
-                setUrlError(null);
-              }}
-              placeholder={t("job.urlPlaceholder")}
-              className={cn(
-                "flex-1 px-3 py-2 rounded-xl bg-secondary/50 border border-border",
-                "text-sm text-foreground placeholder:text-muted-foreground/50",
-                "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
-                "transition-colors"
+            <div className="relative flex-1">
+              <input
+                type="url"
+                value={jobUrl}
+                onChange={(e) => {
+                  setJobUrl(e.target.value);
+                  setUrlError(null);
+                }}
+                placeholder={t("job.urlPlaceholder")}
+                className={cn(
+                  "w-full h-9 px-3 pr-8 rounded-xl bg-secondary/50 border border-border",
+                  "text-sm text-foreground placeholder:text-muted-foreground/50",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
+                  "transition-colors"
+                )}
+                onKeyDown={(e) => e.key === "Enter" && handleFetchUrl()}
+              />
+              {jobUrl && (
+                <button
+                  onClick={() => { setJobUrl(""); setUrlError(null); }}
+                  className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                >
+                  <X size={14} />
+                </button>
               )}
-              onKeyDown={(e) => e.key === "Enter" && handleFetchUrl()}
-            />
+            </div>
+
             <button
               onClick={handleFetchUrl}
               disabled={!jobUrl.trim() || isFetchingUrl}
@@ -133,17 +162,25 @@ export function JobDescription() {
           )}
 
           {jobDescription && (
-            <textarea
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              className={cn(
-                "w-full h-48 p-3 rounded-xl bg-secondary/50 border border-border",
-                "text-sm text-foreground",
-                "resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
-                "transition-colors"
-              )}
-              readOnly={false}
-            />
+            <div className="relative">
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                className={cn(
+                  "w-full h-48 p-3 pr-9 rounded-xl bg-secondary/50 border border-border",
+                  "text-sm text-foreground",
+                  "resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
+                  "transition-colors"
+                )}
+              />
+              <button
+                onClick={() => setJobDescription("")}
+                className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                title={t("import.clear")}
+              >
+                <X size={14} />
+              </button>
+            </div>
           )}
         </div>
       )}

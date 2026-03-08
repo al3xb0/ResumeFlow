@@ -9,11 +9,20 @@ import {
   ArrowDown,
   Download,
   FileText,
+  Eraser,
 } from "lucide-react";
 import { useEditorStore, type SectionType } from "../store/useEditorStore";
 import { useResumeStore } from "../store/useResumeStore";
 import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
+
+const sectionColors: Record<SectionType, string> = {
+  summary: "bg-blue-500/20 text-blue-400",
+  experience: "bg-emerald-500/20 text-emerald-400",
+  education: "bg-purple-500/20 text-purple-400",
+  skills: "bg-amber-500/20 text-amber-400",
+  custom: "bg-gray-500/20 text-gray-400",
+};
 
 export function ResumeEditor() {
   const { t } = useTranslation();
@@ -38,20 +47,19 @@ export function ResumeEditor() {
     }
   }, []);
 
-  const handleSyncToResume = useCallback((showToast = false) => {
-    const text = toPlainText();
-    setResumeText(text);
-    if (showToast) {
-      toast.success(t("editor.synced"));
-    }
-  }, [toPlainText, setResumeText, toast, t]);
+  const handleSyncToResume = useCallback(
+    (showToast = false) => {
+      const text = toPlainText();
+      setResumeText(text);
+      if (showToast) toast.success(t("editor.synced"));
+    },
+    [toPlainText, setResumeText, toast, t]
+  );
 
   useEffect(() => {
     const hasContent = sections.some((s) => s.content.trim());
     if (hasContent) {
-      const timeout = setTimeout(() => {
-        handleSyncToResume();
-      }, 600);
+      const timeout = setTimeout(() => handleSyncToResume(), 600);
       return () => clearTimeout(timeout);
     }
   }, [sections, handleSyncToResume]);
@@ -78,46 +86,36 @@ export function ResumeEditor() {
     { type: "custom", label: t("editor.sectionCustom") },
   ];
 
-  const getSectionIcon = (type: SectionType) => {
-    const colors: Record<SectionType, string> = {
-      summary: "bg-blue-500/20 text-blue-400",
-      experience: "bg-emerald-500/20 text-emerald-400",
-      education: "bg-purple-500/20 text-purple-400",
-      skills: "bg-amber-500/20 text-amber-400",
-      custom: "bg-gray-500/20 text-gray-400",
-    };
-    return colors[type];
-  };
-
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">
           {t("editor.title")}
         </h2>
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleSyncToResume(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             <Download size={12} />
             {t("editor.syncToResume")}
           </button>
           <button
             onClick={clearEditor}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            title={t("import.clear")}
           >
+            <Eraser size={12} />
             {t("import.clear")}
           </button>
         </div>
       </div>
 
       {sections.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-          <FileText size={48} className="text-muted-foreground/30 mb-4" />
-          <p className="text-sm text-muted-foreground">
-            {t("editor.empty")}
-          </p>
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <FileText size={48} className="text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">{t("editor.empty")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pb-4">
@@ -137,7 +135,7 @@ export function ResumeEditor() {
                 <div
                   className={cn(
                     "w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold",
-                    getSectionIcon(section.type)
+                    sectionColors[section.type]
                   )}
                 >
                   {section.type[0].toUpperCase()}
@@ -160,35 +158,26 @@ export function ResumeEditor() {
                   placeholder={t("editor.sectionTitlePlaceholder")}
                 />
 
-                <div className="flex items-center gap-1 ml-auto">
+                <div className="flex items-center gap-0.5 ml-auto">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      moveSection(section.id, "up");
-                    }}
+                    onClick={(e) => {e.stopPropagation(); moveSection(section.id, "up");}}
                     disabled={idx === 0}
-                    className="p-1 rounded hover:bg-secondary/60 text-muted-foreground disabled:opacity-30 transition-colors"
+                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-30"
                     title={t("editor.moveUp")}
                   >
                     <ArrowUp size={12} />
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      moveSection(section.id, "down");
-                    }}
+                    onClick={(e) => {e.stopPropagation(); moveSection(section.id, "down");}}
                     disabled={idx === sections.length - 1}
-                    className="p-1 rounded hover:bg-secondary/60 text-muted-foreground disabled:opacity-30 transition-colors"
+                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-30"
                     title={t("editor.moveDown")}
                   >
                     <ArrowDown size={12} />
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSection(section.id);
-                    }}
-                    className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                    onClick={(e) => {e.stopPropagation(); removeSection(section.id);}}
+                    className="p-1 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title={t("editor.removeSection")}
                   >
                     <Trash2 size={12} />
@@ -205,7 +194,12 @@ export function ResumeEditor() {
                     }
                     onFocus={() => focusSection(section.id)}
                     placeholder={t("editor.contentPlaceholder")}
-                    className="w-full min-h-[80px] bg-secondary/30 rounded-lg p-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none border border-border/50 focus:border-primary/50 transition-colors resize-none overflow-hidden"
+                    className={cn(
+                      "w-full rounded-xl bg-secondary/50 border border-border",
+                      "text-sm text-foreground placeholder:text-muted-foreground/50",
+                      "resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50",
+                      "transition-colors min-h-20 p-3 overflow-hidden"
+                    )}
                   />
                 </div>
               )}
@@ -215,14 +209,14 @@ export function ResumeEditor() {
       )}
 
       <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground mr-1">
+        <span className="text-xs font-medium text-muted-foreground mr-1">
           {t("editor.addSection")}:
         </span>
         {sectionTypeOptions.map((opt) => (
           <button
             key={opt.type}
             onClick={() => handleAddSection(opt.type)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/70 text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-secondary text-secondary-foreground hover:bg-secondary/70 transition-colors"
           >
             <Plus size={10} />
             {opt.label}

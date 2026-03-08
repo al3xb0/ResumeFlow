@@ -21,7 +21,8 @@
     "extracting": "Wyodrębnianie tekstu...",
     "extracted": "Tekst wyodrębniony pomyślnie",
     "extractionError": "Nie udało się wyodrębnić tekstu z pliku",
-    "clear": "Wyczyść"
+    "clear": "Wyczyść",
+    "linksFound": "Wykryto {{count}} link(ów) w PDF"
   },
   "job": {
     "title": "Opis stanowiska",

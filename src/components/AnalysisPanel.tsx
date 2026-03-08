@@ -72,7 +72,7 @@ export function AnalysisPanel() {
         <ReadabilityPanel />
       </div>
 
-      <div className="border-t border-border" />
+      <div className="h-px bg-border" />
 
       <div>
         <h2 className="text-base font-semibold text-foreground mb-3">
@@ -81,7 +81,7 @@ export function AnalysisPanel() {
         <ActionVerbLinter />
       </div>
 
-      <div className="border-t border-border" />
+      <div className="h-px bg-border" />
 
       <div className="flex flex-col gap-4 flex-1">
         <div className="flex items-center justify-between">
@@ -92,7 +92,7 @@ export function AnalysisPanel() {
             onClick={handleAnalyze}
             disabled={!canAnalyze || isAnalyzing}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
               canAnalyze && !isAnalyzing
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-secondary text-muted-foreground cursor-not-allowed"
@@ -112,62 +112,60 @@ export function AnalysisPanel() {
           </button>
         </div>
 
-      {!analysisResult ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-          <BarChart3 size={48} className="text-muted-foreground/30 mb-4" />
-          <p className="text-sm text-muted-foreground">
-            {t("analysis.noResults")}
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-6 bg-secondary/50 rounded-xl p-5">
-            <ScoreRing score={analysisResult.matchScore} />
-            <div className="flex flex-col gap-1">
-              <span className="text-2xl font-bold text-foreground">
-                {analysisResult.matchScore}%
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {t("analysis.matchScore")}
-              </span>
-              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                <span>
-                  {t("analysis.totalKeywords")}:{" "}
-                  <strong className="text-foreground">
-                    {analysisResult.totalKeywords}
-                  </strong>
+        {!analysisResult ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <BarChart3 size={48} className="text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">{t("analysis.noResults")}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center gap-6 p-5 rounded-xl bg-secondary/50 border border-border">
+              <ScoreRing score={analysisResult.matchScore} />
+              <div className="flex flex-col gap-1">
+                <span className="text-2xl font-bold text-foreground">
+                  {analysisResult.matchScore}%
                 </span>
-                <span>
-                  {t("analysis.matched")}:{" "}
-                  <strong className="text-success">
-                    {analysisResult.foundKeywords.length}
-                  </strong>
+                <span className="text-sm text-muted-foreground">
+                  {t("analysis.matchScore")}
                 </span>
-                <span>
-                  {t("analysis.missing")}:{" "}
-                  <strong className="text-destructive">
-                    {analysisResult.missingKeywords.length}
-                  </strong>
-                </span>
+                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                  <span>
+                    {t("analysis.totalKeywords")}:{" "}
+                    <strong className="text-foreground">
+                      {analysisResult.totalKeywords}
+                    </strong>
+                  </span>
+                  <span>
+                    {t("analysis.matched")}:{" "}
+                    <strong className="text-success">
+                      {analysisResult.foundKeywords.length}
+                    </strong>
+                  </span>
+                  <span>
+                    {t("analysis.missing")}:{" "}
+                    <strong className="text-destructive">
+                      {analysisResult.missingKeywords.length}
+                    </strong>
+                  </span>
+                </div>
               </div>
             </div>
+
+            <KeywordSection
+              title={t("analysis.foundKeywords")}
+              keywords={analysisResult.foundKeywords}
+              icon={<CheckCircle size={14} className="text-success" />}
+              tagClassName="bg-success/10 text-success border border-success/20"
+            />
+
+            <KeywordSection
+              title={t("analysis.missingKeywords")}
+              keywords={analysisResult.missingKeywords}
+              icon={<XCircle size={14} className="text-destructive" />}
+              tagClassName="bg-destructive/10 text-destructive border border-destructive/20"
+            />
           </div>
-
-          <KeywordSection
-            title={t("analysis.foundKeywords")}
-            keywords={analysisResult.foundKeywords}
-            icon={<CheckCircle size={14} className="text-success" />}
-            tagClassName="bg-success/10 text-success border-success/20"
-          />
-
-          <KeywordSection
-            title={t("analysis.missingKeywords")}
-            keywords={analysisResult.missingKeywords}
-            icon={<XCircle size={14} className="text-destructive" />}
-            tagClassName="bg-destructive/10 text-destructive border-destructive/20"
-          />
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
@@ -237,10 +235,7 @@ function KeywordSection({
         {keywords.map((keyword, i) => (
           <span
             key={i}
-            className={cn(
-              "px-2 py-0.5 rounded-md text-xs border",
-              tagClassName
-            )}
+            className={cn("px-2 py-0.5 rounded-md text-xs font-medium", tagClassName)}
           >
             {keyword}
           </span>
