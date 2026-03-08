@@ -35,6 +35,7 @@ You drop in your resume (PDF or plain text), paste a job description (or grab it
 | **Match score** | Weighted percentage showing how well your resume fits the job |
 | **Action verb linter** | Detects weak verbs ("worked", "helped") and suggests stronger replacements |
 | **Readability check** | Detects broken PDF extraction, missing sections, garbled text, word count |
+| **PDF link extraction** | Clickable hyperlinks preserved from the original PDF |
 | **Live analysis** | All panels update automatically as you type (debounced) |
 | **Dark theme** | Easy on the eyes, always |
 | **i18n** | English, Russian, Polish |
@@ -90,17 +91,23 @@ cargo test
 ## Project structure
 
 ```text
-├── src/                    # React frontend
-│   ├── components/         # UI components
-│   ├── store/              # Zustand store
-│   ├── i18n/               # Translations (en, ru, pl)
-│   └── index.css           # Tailwind theme & CSS variables
-├── src-tauri/              # Rust backend
+├── src/                        # React frontend
+│   ├── components/             # UI components (9 modules)
+│   ├── store/                  # Zustand stores (resume, editor, toast)
+│   ├── i18n/                   # react-i18next setup & locale JSON files
+│   ├── lib/                    # Shared utilities (cn helper)
+│   └── index.css               # Tailwind theme & CSS variables
+├── src-tauri/                  # Rust backend
 │   └── src/
-│       ├── lib.rs          # Tauri commands
-│       ├── analysis.rs     # Keyword matching & readability engine
-│       ├── parser.rs       # PDF text extraction
-│       └── scraper.rs      # URL fetching & HTML parsing
+│       ├── lib.rs              # Tauri command handlers
+│       ├── parser.rs           # PDF text & hyperlink extraction
+│       ├── scraper.rs          # URL fetching & HTML parsing
+│       └── analysis/           # Analysis engine (module directory)
+│           ├── mod.rs          # Re-exports & text normalization
+│           ├── constants.rs    # Tech keywords, sections, verb lists
+│           ├── keywords.rs     # Keyword matching & scoring
+│           ├── readability.rs  # Readability & structure checks
+│           └── verbs.rs        # Action verb linting
 └── package.json
 ```
 

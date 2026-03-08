@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use regex::Regex;
 
-use super::normalize;
 use super::constants::{AMBIGUOUS_LANG, NICE_CASE, TECH_KEYWORDS};
+use super::normalize;
 
 #[derive(Clone, Debug)]
 struct Keyword {
@@ -117,7 +117,6 @@ fn is_tech_mention(word: &str, text: &str) -> bool {
 }
 
 fn nice_case(s: &str) -> String {
-    
     for &(key, display) in NICE_CASE {
         if key == s {
             return display.to_string();
@@ -278,7 +277,10 @@ mod tests {
     #[test]
     fn test_dotted_variant_matching() {
         // Job says "NodeJS", resume says "Node.js" — should still match
-        let result = analyze_match("Experience with Node.js and React", "Looking for NodeJS developer");
+        let result = analyze_match(
+            "Experience with Node.js and React",
+            "Looking for NodeJS developer",
+        );
         assert!(
             result.found_keywords.iter().any(|k| k == "Node.js"),
             "Node.js should be found when resume has 'Node.js' and job has 'NodeJS'. Found: {:?}, Missing: {:?}",
@@ -286,7 +288,10 @@ mod tests {
         );
 
         // Vice versa: job says "Node.js", resume says "NodeJS"
-        let result2 = analyze_match("Experience with NodeJS and React", "Looking for Node.js developer");
+        let result2 = analyze_match(
+            "Experience with NodeJS and React",
+            "Looking for Node.js developer",
+        );
         assert!(
             result2.found_keywords.iter().any(|k| k == "Node.js"),
             "Node.js should be found when resume has 'NodeJS' and job has 'Node.js'. Found: {:?}, Missing: {:?}",

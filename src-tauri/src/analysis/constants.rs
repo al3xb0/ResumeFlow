@@ -172,28 +172,16 @@ pub(super) const AMBIGUOUS_LANG: &[&str] = &["go", "r"];
 
 pub(super) const EXPECTED_SECTIONS: &[(&str, &[&str])] = &[
     ("contact", &["email", "phone", "linkedin", "github", "@"]),
-    (
-        "summary",
-        &["summary", "about", "objective", "profile"],
-    ),
+    ("summary", &["summary", "about", "objective", "profile"]),
     (
         "experience",
         &["experience", "work", "employment", "professional"],
     ),
     (
         "education",
-        &[
-            "education",
-            "university",
-            "bachelor",
-            "master",
-            "degree",
-        ],
+        &["education", "university", "bachelor", "master", "degree"],
     ),
-    (
-        "skills",
-        &["skills", "technologies", "tech stack"],
-    ),
+    ("skills", &["skills", "technologies", "tech stack"]),
 ];
 
 pub(super) const NICE_CASE: &[(&str, &str)] = &[
@@ -345,5 +333,3 @@ pub(super) const WEAK_VERBS_EN: &[(&str, &[&str])] = &[
         &["managed", "maintained", "administered", "oversaw"],
     ),
 ];
-
-

@@ -53,8 +53,11 @@ impl SmartTextOutput {
             self.result.push('\n');
         }
 
-        self.chars
-            .sort_by(|a, b| a.y.partial_cmp(&b.y).unwrap().then(a.x.partial_cmp(&b.x).unwrap()));
+        self.chars.sort_by(|a, b| {
+            a.y.partial_cmp(&b.y)
+                .unwrap()
+                .then(a.x.partial_cmp(&b.x).unwrap())
+        });
 
         let mut line_start = 0;
         for i in 1..self.chars.len() {
@@ -78,14 +81,12 @@ impl SmartTextOutput {
         self.chars.clear();
     }
 
-   
     fn compute_space_threshold(line: &[CharInfo]) -> f64 {
         if line.len() < 2 {
             return f64::MAX;
         }
 
-        let avg_fs: f64 =
-            line.iter().map(|c| c.font_size).sum::<f64>() / line.len() as f64;
+        let avg_fs: f64 = line.iter().map(|c| c.font_size).sum::<f64>() / line.len() as f64;
 
         // Collect positive gaps that occur at word-id boundaries
         let mut gaps: Vec<f64> = Vec::new();
@@ -147,8 +148,8 @@ impl SmartTextOutput {
             if wid_counts[&ch.word_id] != 1 {
                 break;
             }
-            let is_single_alpha = ch.text.len() == 1
-                && ch.text.chars().next().map_or(false, |c| c.is_alphabetic());
+            let is_single_alpha =
+                ch.text.len() == 1 && ch.text.chars().next().map_or(false, |c| c.is_alphabetic());
             if !is_single_alpha {
                 break;
             }
@@ -271,8 +272,8 @@ pub fn extract_text_from_pdf(file_path: &str) -> Result<String, String> {
 fn extract_pdf(file_path: &str) -> Result<String, String> {
     let mut output = SmartTextOutput::new();
 
-    let doc = pdf_extract::Document::load(file_path)
-        .map_err(|e| format!("Failed to load PDF: {}", e))?;
+    let doc =
+        pdf_extract::Document::load(file_path).map_err(|e| format!("Failed to load PDF: {}", e))?;
 
     pdf_extract::output_doc(&doc, &mut output)
         .map_err(|e| format!("Failed to extract PDF text: {}", e))?;
@@ -306,8 +307,7 @@ pub fn extract_links_from_pdf(file_path: &str) -> Result<Vec<PdfLink>, String> {
         return Err("File not found".to_string());
     }
 
-    let doc = Document::load(file_path)
-        .map_err(|e| format!("Failed to load PDF: {}", e))?;
+    let doc = Document::load(file_path).map_err(|e| format!("Failed to load PDF: {}", e))?;
 
     let mut links = Vec::new();
 
@@ -395,24 +395,20 @@ fn clean_extracted_text(text: &str) -> String {
 fn merge_broken_words(text: &str) -> String {
     // Single uppercase (except "I") + space + 2+ lowercase chars
     // "D eveloper" → "Developer", "A dditional" → "Additional"
-    static RE_UPPER_LOWER: LazyLock<Regex> = LazyLock::new(||
-        Regex::new(r"(?m)(^|[^a-zA-Z])([A-HJ-Z]) ([a-z]{2,})").unwrap()
-    );
+    static RE_UPPER_LOWER: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?m)(^|[^a-zA-Z])([A-HJ-Z]) ([a-z]{2,})").unwrap());
     // Single uppercase (except "A","I") + space + 2+ uppercase chars
     // "C SS" → "CSS", "C MS" → "CMS"
-    static RE_UPPER_UPPER: LazyLock<Regex> = LazyLock::new(||
-        Regex::new(r"(?m)(^|[^a-zA-Z])([B-HJ-Z]) ([A-Z]{2,})").unwrap()
-    );
+    static RE_UPPER_UPPER: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?m)(^|[^a-zA-Z])([B-HJ-Z]) ([A-Z]{2,})").unwrap());
     // camelCase word ending in uppercase + space + 2+ uppercase continuation
     // "TailwindC SS" → "TailwindCSS"
-    static RE_CAMEL_UPPER: LazyLock<Regex> = LazyLock::new(||
-        Regex::new(r"([a-z])([A-Z]) ([A-Z]{2,})").unwrap()
-    );
+    static RE_CAMEL_UPPER: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"([a-z])([A-Z]) ([A-Z]{2,})").unwrap());
     // Single uppercase (except "A","I") + space + digit
     // "C 1" → "C1"
-    static RE_UPPER_DIGIT: LazyLock<Regex> = LazyLock::new(||
-        Regex::new(r"(?m)(^|[^a-zA-Z])([B-HJ-Z]) (\d)").unwrap()
-    );
+    static RE_UPPER_DIGIT: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?m)(^|[^a-zA-Z])([B-HJ-Z]) (\d)").unwrap());
 
     let text = RE_UPPER_LOWER.replace_all(text, "${1}${2}${3}");
     let text = RE_UPPER_UPPER.replace_all(&text, "${1}${2}${3}");
@@ -490,17 +486,87 @@ mod tests {
         // Simulate a line: "Hello World" with a clear gap between words
         // All chars in "Hello" share word_id 1, all chars in "World" share word_id 2
         let chars: Vec<CharInfo> = vec![
-            CharInfo { x: 0.0, y: 10.0, end_x: 5.0, font_size: 12.0, text: "H".into(), word_id: 1 },
-            CharInfo { x: 5.0, y: 10.0, end_x: 10.0, font_size: 12.0, text: "e".into(), word_id: 1 },
-            CharInfo { x: 10.0, y: 10.0, end_x: 15.0, font_size: 12.0, text: "l".into(), word_id: 1 },
-            CharInfo { x: 15.0, y: 10.0, end_x: 20.0, font_size: 12.0, text: "l".into(), word_id: 1 },
-            CharInfo { x: 20.0, y: 10.0, end_x: 25.0, font_size: 12.0, text: "o".into(), word_id: 1 },
+            CharInfo {
+                x: 0.0,
+                y: 10.0,
+                end_x: 5.0,
+                font_size: 12.0,
+                text: "H".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 5.0,
+                y: 10.0,
+                end_x: 10.0,
+                font_size: 12.0,
+                text: "e".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 10.0,
+                y: 10.0,
+                end_x: 15.0,
+                font_size: 12.0,
+                text: "l".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 15.0,
+                y: 10.0,
+                end_x: 20.0,
+                font_size: 12.0,
+                text: "l".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 20.0,
+                y: 10.0,
+                end_x: 25.0,
+                font_size: 12.0,
+                text: "o".into(),
+                word_id: 1,
+            },
             // Word gap
-            CharInfo { x: 29.0, y: 10.0, end_x: 36.0, font_size: 12.0, text: "W".into(), word_id: 2 },
-            CharInfo { x: 36.0, y: 10.0, end_x: 41.0, font_size: 12.0, text: "o".into(), word_id: 2 },
-            CharInfo { x: 41.0, y: 10.0, end_x: 46.0, font_size: 12.0, text: "r".into(), word_id: 2 },
-            CharInfo { x: 46.0, y: 10.0, end_x: 51.0, font_size: 12.0, text: "l".into(), word_id: 2 },
-            CharInfo { x: 51.0, y: 10.0, end_x: 56.0, font_size: 12.0, text: "d".into(), word_id: 2 },
+            CharInfo {
+                x: 29.0,
+                y: 10.0,
+                end_x: 36.0,
+                font_size: 12.0,
+                text: "W".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 36.0,
+                y: 10.0,
+                end_x: 41.0,
+                font_size: 12.0,
+                text: "o".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 41.0,
+                y: 10.0,
+                end_x: 46.0,
+                font_size: 12.0,
+                text: "r".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 46.0,
+                y: 10.0,
+                end_x: 51.0,
+                font_size: 12.0,
+                text: "l".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 51.0,
+                y: 10.0,
+                end_x: 56.0,
+                font_size: 12.0,
+                text: "d".into(),
+                word_id: 2,
+            },
         ];
         let mut result = String::new();
         SmartTextOutput::render_line_into(&chars, &mut result);
@@ -512,14 +578,56 @@ mod tests {
         // Simulate "GitHub" from TJ array: [(G) 20 (itH) 30 (ub)]
         // Each chunk gets a different word_id, but they should NOT be split
         let chars: Vec<CharInfo> = vec![
-            CharInfo { x: 0.0, y: 10.0, end_x: 7.0, font_size: 12.0, text: "G".into(), word_id: 1 },
+            CharInfo {
+                x: 0.0,
+                y: 10.0,
+                end_x: 7.0,
+                font_size: 12.0,
+                text: "G".into(),
+                word_id: 1,
+            },
             // Different word_id from next TJ chunk, but tiny gap → no space
-            CharInfo { x: 7.2, y: 10.0, end_x: 10.5, font_size: 12.0, text: "i".into(), word_id: 2 },
-            CharInfo { x: 10.5, y: 10.0, end_x: 14.5, font_size: 12.0, text: "t".into(), word_id: 2 },
-            CharInfo { x: 14.5, y: 10.0, end_x: 21.0, font_size: 12.0, text: "H".into(), word_id: 2 },
+            CharInfo {
+                x: 7.2,
+                y: 10.0,
+                end_x: 10.5,
+                font_size: 12.0,
+                text: "i".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 10.5,
+                y: 10.0,
+                end_x: 14.5,
+                font_size: 12.0,
+                text: "t".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 14.5,
+                y: 10.0,
+                end_x: 21.0,
+                font_size: 12.0,
+                text: "H".into(),
+                word_id: 2,
+            },
             // Another TJ chunk
-            CharInfo { x: 21.3, y: 10.0, end_x: 27.0, font_size: 12.0, text: "u".into(), word_id: 3 },
-            CharInfo { x: 27.0, y: 10.0, end_x: 33.0, font_size: 12.0, text: "b".into(), word_id: 3 },
+            CharInfo {
+                x: 21.3,
+                y: 10.0,
+                end_x: 27.0,
+                font_size: 12.0,
+                text: "u".into(),
+                word_id: 3,
+            },
+            CharInfo {
+                x: 27.0,
+                y: 10.0,
+                end_x: 33.0,
+                font_size: 12.0,
+                text: "b".into(),
+                word_id: 3,
+            },
         ];
         let mut result = String::new();
         SmartTextOutput::render_line_into(&chars, &mut result);
@@ -530,18 +638,88 @@ mod tests {
     fn test_adaptive_threshold_with_context() {
         // "GitHub | LinkedIn" — TJ kerning inside GitHub, real spaces around |
         let chars: Vec<CharInfo> = vec![
-            CharInfo { x: 0.0, y: 10.0, end_x: 7.0, font_size: 12.0, text: "G".into(), word_id: 1 },
-            CharInfo { x: 7.2, y: 10.0, end_x: 10.5, font_size: 12.0, text: "i".into(), word_id: 2 },
-            CharInfo { x: 10.5, y: 10.0, end_x: 14.5, font_size: 12.0, text: "t".into(), word_id: 2 },
-            CharInfo { x: 14.5, y: 10.0, end_x: 21.0, font_size: 12.0, text: "H".into(), word_id: 2 },
-            CharInfo { x: 21.3, y: 10.0, end_x: 27.0, font_size: 12.0, text: "u".into(), word_id: 3 },
-            CharInfo { x: 27.0, y: 10.0, end_x: 33.0, font_size: 12.0, text: "b".into(), word_id: 3 },
+            CharInfo {
+                x: 0.0,
+                y: 10.0,
+                end_x: 7.0,
+                font_size: 12.0,
+                text: "G".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 7.2,
+                y: 10.0,
+                end_x: 10.5,
+                font_size: 12.0,
+                text: "i".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 10.5,
+                y: 10.0,
+                end_x: 14.5,
+                font_size: 12.0,
+                text: "t".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 14.5,
+                y: 10.0,
+                end_x: 21.0,
+                font_size: 12.0,
+                text: "H".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 21.3,
+                y: 10.0,
+                end_x: 27.0,
+                font_size: 12.0,
+                text: "u".into(),
+                word_id: 3,
+            },
+            CharInfo {
+                x: 27.0,
+                y: 10.0,
+                end_x: 33.0,
+                font_size: 12.0,
+                text: "b".into(),
+                word_id: 3,
+            },
             // Real word space to |
-            CharInfo { x: 37.0, y: 10.0, end_x: 39.0, font_size: 12.0, text: "|".into(), word_id: 4 },
+            CharInfo {
+                x: 37.0,
+                y: 10.0,
+                end_x: 39.0,
+                font_size: 12.0,
+                text: "|".into(),
+                word_id: 4,
+            },
             // Real word space to LinkedIn
-            CharInfo { x: 43.0, y: 10.0, end_x: 50.0, font_size: 12.0, text: "L".into(), word_id: 5 },
-            CharInfo { x: 50.0, y: 10.0, end_x: 53.0, font_size: 12.0, text: "i".into(), word_id: 5 },
-            CharInfo { x: 53.0, y: 10.0, end_x: 58.0, font_size: 12.0, text: "n".into(), word_id: 5 },
+            CharInfo {
+                x: 43.0,
+                y: 10.0,
+                end_x: 50.0,
+                font_size: 12.0,
+                text: "L".into(),
+                word_id: 5,
+            },
+            CharInfo {
+                x: 50.0,
+                y: 10.0,
+                end_x: 53.0,
+                font_size: 12.0,
+                text: "i".into(),
+                word_id: 5,
+            },
+            CharInfo {
+                x: 53.0,
+                y: 10.0,
+                end_x: 58.0,
+                font_size: 12.0,
+                text: "n".into(),
+                word_id: 5,
+            },
         ];
         let mut result = String::new();
         SmartTextOutput::render_line_into(&chars, &mut result);
@@ -552,8 +730,22 @@ mod tests {
     fn test_same_word_id_never_splits() {
         // Even with a large gap, same word_id should never split
         let chars: Vec<CharInfo> = vec![
-            CharInfo { x: 0.0, y: 10.0, end_x: 5.0, font_size: 12.0, text: "A".into(), word_id: 1 },
-            CharInfo { x: 15.0, y: 10.0, end_x: 20.0, font_size: 12.0, text: "B".into(), word_id: 1 },
+            CharInfo {
+                x: 0.0,
+                y: 10.0,
+                end_x: 5.0,
+                font_size: 12.0,
+                text: "A".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 15.0,
+                y: 10.0,
+                end_x: 20.0,
+                font_size: 12.0,
+                text: "B".into(),
+                word_id: 1,
+            },
         ];
         let mut result = String::new();
         SmartTextOutput::render_line_into(&chars, &mut result);
@@ -566,7 +758,10 @@ mod tests {
         assert_eq!(merge_broken_words("C ypress"), "Cypress");
         assert_eq!(merge_broken_words("A dditional"), "Additional");
         assert_eq!(merge_broken_words("A liaksandr"), "Aliaksandr");
-        assert_eq!(merge_broken_words("Junior Frontend D eveloper"), "Junior Frontend Developer");
+        assert_eq!(
+            merge_broken_words("Junior Frontend D eveloper"),
+            "Junior Frontend Developer"
+        );
     }
 
     #[test]
@@ -619,13 +814,55 @@ mod tests {
         // Icon char has its own word_id, positioned right after text
         let chars: Vec<CharInfo> = vec![
             // "gmail.com" — all same word_id
-            CharInfo { x: 0.0, y: 10.0, end_x: 5.0, font_size: 10.0, text: "g".into(), word_id: 5 },
-            CharInfo { x: 5.0, y: 10.0, end_x: 10.0, font_size: 10.0, text: "m".into(), word_id: 5 },
-            CharInfo { x: 10.0, y: 10.0, end_x: 15.0, font_size: 10.0, text: "a".into(), word_id: 5 },
-            CharInfo { x: 15.0, y: 10.0, end_x: 20.0, font_size: 10.0, text: "i".into(), word_id: 5 },
-            CharInfo { x: 20.0, y: 10.0, end_x: 25.0, font_size: 10.0, text: "l".into(), word_id: 5 },
+            CharInfo {
+                x: 0.0,
+                y: 10.0,
+                end_x: 5.0,
+                font_size: 10.0,
+                text: "g".into(),
+                word_id: 5,
+            },
+            CharInfo {
+                x: 5.0,
+                y: 10.0,
+                end_x: 10.0,
+                font_size: 10.0,
+                text: "m".into(),
+                word_id: 5,
+            },
+            CharInfo {
+                x: 10.0,
+                y: 10.0,
+                end_x: 15.0,
+                font_size: 10.0,
+                text: "a".into(),
+                word_id: 5,
+            },
+            CharInfo {
+                x: 15.0,
+                y: 10.0,
+                end_x: 20.0,
+                font_size: 10.0,
+                text: "i".into(),
+                word_id: 5,
+            },
+            CharInfo {
+                x: 20.0,
+                y: 10.0,
+                end_x: 25.0,
+                font_size: 10.0,
+                text: "l".into(),
+                word_id: 5,
+            },
             // Icon char "E" — different word_id, positioned right after text
-            CharInfo { x: 25.5, y: 10.0, end_x: 30.0, font_size: 10.0, text: "E".into(), word_id: 42 },
+            CharInfo {
+                x: 25.5,
+                y: 10.0,
+                end_x: 30.0,
+                font_size: 10.0,
+                text: "E".into(),
+                word_id: 42,
+            },
         ];
         let mut result = String::new();
         SmartTextOutput::render_line_into(&chars, &mut result);
@@ -636,12 +873,54 @@ mod tests {
     fn test_icon_char_does_not_strip_real_text() {
         // TJ kerning: [(G) 20 (itHub)] — "G" is a singleton but at START, not end
         let chars: Vec<CharInfo> = vec![
-            CharInfo { x: 0.0, y: 10.0, end_x: 7.0, font_size: 12.0, text: "G".into(), word_id: 1 },
-            CharInfo { x: 7.2, y: 10.0, end_x: 10.5, font_size: 12.0, text: "i".into(), word_id: 2 },
-            CharInfo { x: 10.5, y: 10.0, end_x: 14.5, font_size: 12.0, text: "t".into(), word_id: 2 },
-            CharInfo { x: 14.5, y: 10.0, end_x: 21.0, font_size: 12.0, text: "H".into(), word_id: 2 },
-            CharInfo { x: 21.3, y: 10.0, end_x: 27.0, font_size: 12.0, text: "u".into(), word_id: 3 },
-            CharInfo { x: 27.0, y: 10.0, end_x: 33.0, font_size: 12.0, text: "b".into(), word_id: 3 },
+            CharInfo {
+                x: 0.0,
+                y: 10.0,
+                end_x: 7.0,
+                font_size: 12.0,
+                text: "G".into(),
+                word_id: 1,
+            },
+            CharInfo {
+                x: 7.2,
+                y: 10.0,
+                end_x: 10.5,
+                font_size: 12.0,
+                text: "i".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 10.5,
+                y: 10.0,
+                end_x: 14.5,
+                font_size: 12.0,
+                text: "t".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 14.5,
+                y: 10.0,
+                end_x: 21.0,
+                font_size: 12.0,
+                text: "H".into(),
+                word_id: 2,
+            },
+            CharInfo {
+                x: 21.3,
+                y: 10.0,
+                end_x: 27.0,
+                font_size: 12.0,
+                text: "u".into(),
+                word_id: 3,
+            },
+            CharInfo {
+                x: 27.0,
+                y: 10.0,
+                end_x: 33.0,
+                font_size: 12.0,
+                text: "b".into(),
+                word_id: 3,
+            },
         ];
         let mut result = String::new();
         SmartTextOutput::render_line_into(&chars, &mut result);

@@ -3,8 +3,8 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use super::normalize;
 use super::constants::EXPECTED_SECTIONS;
+use super::normalize;
 
 // ── Thresholds ──────────────────────────────────────────────────────────────
 const GOOD_WORD_COUNT: u32 = 150;
@@ -20,14 +20,12 @@ const MIN_DUPLICATE_WORDS: usize = 4;
 
 static RE_EMAIL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[\w.+-]+@[\w-]+\.[\w.]+").unwrap());
-static RE_PHONE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"[\+]?[\d\s\-\(\)]{7,}").unwrap());
+static RE_PHONE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\+]?[\d\s\-\(\)]{7,}").unwrap());
 static RE_LINKEDIN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)linkedin\.com/in/[\w\-]+").unwrap());
 static RE_GITHUB: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)github\.com/[\w\-]+").unwrap());
-static RE_BULLET: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[\s]*[•\-\*▪◦‣⁃]\s*").unwrap());
+static RE_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[\s]*[•\-\*▪◦‣⁃]\s*").unwrap());
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
