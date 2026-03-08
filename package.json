@@ -1,7 +1,7 @@
 {
   "name": "resumeflow",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,22 +14,22 @@
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-opener": "^2",
     "clsx": "^2.1.1",
-    "i18next": "^25.8.13",
-    "lucide-react": "^0.575.0",
+    "i18next": "^25.8.14",
+    "lucide-react": "^0.577.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-i18next": "^16.5.4",
+    "react-i18next": "^16.5.6",
     "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
-    "@tauri-apps/cli": "^2",
+    "@tauri-apps/cli": "^2.10.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@vitejs/plugin-react": "^5.1.4",
     "tailwindcss": "^4.2.1",
-    "typescript": "~5.8.3",
+    "typescript": "~5.9.3",
     "vite": "^7.0.4"
   }
 }
