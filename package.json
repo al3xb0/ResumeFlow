@@ -1,35 +1,73 @@
 {
   "name": "resumeflow",
   "private": true,
-  "version": "0.2.5",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "eslint src && prettier --check \"src/**/*.{ts,tsx,json,css}\" && tsc --noEmit && vitest run",
+    "prepare": "husky"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-opener": "^2",
+    "@types/dompurify": "^3.0.5",
     "clsx": "^2.1.1",
-    "i18next": "^25.8.14",
+    "docx": "^9.6.1",
+    "dompurify": "^3.4.0",
+    "i18next": "^25.8.18",
     "lucide-react": "^0.577.0",
+    "mammoth": "^1.12.0",
+    "pdfmake": "^0.3.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-i18next": "^16.5.6",
+    "react-i18next": "^16.5.8",
+    "react-pdf": "^10.4.1",
     "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/cli": "^2.10.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/pdfmake": "^0.3.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "husky": "^9.1.7",
+    "jsdom": "^29.0.2",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.9.3",
-    "vite": "^7.0.4"
+    "typescript-eslint": "^8.57.0",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.4"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.{json,css}": [
+      "prettier --write"
+    ]
   }
 }

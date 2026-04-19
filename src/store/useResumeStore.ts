@@ -32,12 +32,16 @@ export interface PdfLink {
   page: number;
 }
 
+export type ImportedFileType = "pdf" | "docx" | null;
+
 export type JobInputMode = "text" | "url";
 
 interface ResumeState {
   // Resume data
   resumeText: string;
   resumeFileName: string | null;
+  importedFilePath: string | null;
+  importedFileType: ImportedFileType;
 
   // Job description
   jobDescription: string;
@@ -63,6 +67,8 @@ interface ResumeState {
   // Actions
   setResumeText: (text: string) => void;
   setResumeFileName: (name: string | null) => void;
+  setImportedFilePath: (path: string | null) => void;
+  setImportedFileType: (type: ImportedFileType) => void;
   setJobDescription: (text: string) => void;
   setJobInputMode: (mode: JobInputMode) => void;
   setJobUrl: (url: string) => void;
@@ -81,6 +87,8 @@ interface ResumeState {
 export const useResumeStore = create<ResumeState>((set) => ({
   resumeText: "",
   resumeFileName: null,
+  importedFilePath: null,
+  importedFileType: null,
   jobDescription: "",
   jobInputMode: "text",
   jobUrl: "",
@@ -95,6 +103,8 @@ export const useResumeStore = create<ResumeState>((set) => ({
 
   setResumeText: (text) => set({ resumeText: text }),
   setResumeFileName: (name) => set({ resumeFileName: name }),
+  setImportedFilePath: (path) => set({ importedFilePath: path }),
+  setImportedFileType: (type) => set({ importedFileType: type }),
   setJobDescription: (text) => set({ jobDescription: text }),
   setJobInputMode: (mode) => set({ jobInputMode: mode }),
   setJobUrl: (url) => set({ jobUrl: url }),
@@ -110,6 +120,8 @@ export const useResumeStore = create<ResumeState>((set) => ({
     set({
       resumeText: "",
       resumeFileName: null,
+      importedFilePath: null,
+      importedFileType: null,
       analysisResult: null,
       readabilityResult: null,
       verbLintResult: null,
@@ -119,6 +131,8 @@ export const useResumeStore = create<ResumeState>((set) => ({
     set({
       resumeText: "",
       resumeFileName: null,
+      importedFilePath: null,
+      importedFileType: null,
       jobDescription: "",
       jobUrl: "",
       analysisResult: null,

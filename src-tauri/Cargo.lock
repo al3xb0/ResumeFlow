@@ -3311,8 +3311,9 @@ dependencies = [
 
 [[package]]
 name = "resumeflow"
-version = "0.2.5"
+version = "0.4.0"
 dependencies = [
+ "base64 0.22.1",
  "pdf-extract",
  "regex",
  "reqwest 0.12.28",

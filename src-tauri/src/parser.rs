@@ -149,7 +149,7 @@ impl SmartTextOutput {
                 break;
             }
             let is_single_alpha =
-                ch.text.len() == 1 && ch.text.chars().next().map_or(false, |c| c.is_alphabetic());
+                ch.text.len() == 1 && ch.text.chars().next().is_some_and(|c| c.is_alphabetic());
             if !is_single_alpha {
                 break;
             }
@@ -356,7 +356,7 @@ pub fn extract_links_from_pdf(file_path: &str) -> Result<Vec<PdfLink>, String> {
             if let Ok(uri_obj) = action.get(b"URI") {
                 let uri_str = match doc.dereference(uri_obj) {
                     Ok((_, Object::String(bytes, _))) => {
-                        String::from_utf8_lossy(&bytes).to_string()
+                        String::from_utf8_lossy(bytes).to_string()
                     }
                     _ => continue,
                 };
@@ -383,7 +383,7 @@ pub fn extract_links_from_pdf(file_path: &str) -> Result<Vec<PdfLink>, String> {
 // ---------------------------------------------------------------------------
 
 fn clean_extracted_text(text: &str) -> String {
-    let text = sanitize_invisible_chars(&text);
+    let text = sanitize_invisible_chars(text);
     let text = merge_broken_words(&text);
     text.lines()
         .map(|line| line.trim())

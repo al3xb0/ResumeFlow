@@ -20,8 +20,7 @@ export function AnalysisPanel() {
     setIsAnalyzing,
   } = useResumeStore();
 
-  const canAnalyze =
-    resumeText.trim().length > 0 && jobDescription.trim().length > 0;
+  const canAnalyze = resumeText.trim().length > 0 && jobDescription.trim().length > 0;
 
   const analyzeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,6 +56,7 @@ export function AnalysisPanel() {
     return () => {
       if (analyzeRef.current) clearTimeout(analyzeRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeText, jobDescription]);
 
   const handleAnalyze = useCallback(async () => {
@@ -66,9 +66,7 @@ export function AnalysisPanel() {
   return (
     <div className="flex flex-col gap-6 pb-8">
       <div>
-        <h2 className="text-base font-semibold text-foreground mb-3">
-          {t("readability.title")}
-        </h2>
+        <h2 className="text-base font-semibold text-foreground mb-3">{t("readability.title")}</h2>
         <ReadabilityPanel />
       </div>
 
@@ -85,9 +83,7 @@ export function AnalysisPanel() {
 
       <div className="flex flex-col gap-4 flex-1">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">
-            {t("analysis.title")}
-          </h2>
+          <h2 className="text-base font-semibold text-foreground">{t("analysis.title")}</h2>
           <button
             onClick={handleAnalyze}
             disabled={!canAnalyze || isAnalyzing}
@@ -95,7 +91,7 @@ export function AnalysisPanel() {
               "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
               canAnalyze && !isAnalyzing
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-secondary text-muted-foreground cursor-not-allowed"
+                : "bg-secondary text-muted-foreground cursor-not-allowed",
             )}
           >
             {isAnalyzing ? (
@@ -125,21 +121,15 @@ export function AnalysisPanel() {
                 <span className="text-2xl font-bold text-foreground">
                   {analysisResult.matchScore}%
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  {t("analysis.matchScore")}
-                </span>
+                <span className="text-sm text-muted-foreground">{t("analysis.matchScore")}</span>
                 <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                   <span>
                     {t("analysis.totalKeywords")}:{" "}
-                    <strong className="text-foreground">
-                      {analysisResult.totalKeywords}
-                    </strong>
+                    <strong className="text-foreground">{analysisResult.totalKeywords}</strong>
                   </span>
                   <span>
                     {t("analysis.matched")}:{" "}
-                    <strong className="text-success">
-                      {analysisResult.foundKeywords.length}
-                    </strong>
+                    <strong className="text-success">{analysisResult.foundKeywords.length}</strong>
                   </span>
                   <span>
                     {t("analysis.missing")}:{" "}
@@ -184,7 +174,13 @@ function ScoreRing({ score }: { score: number }) {
   };
 
   return (
-    <svg width="100" height="100" viewBox="0 0 100 100">
+    <svg
+      width="100"
+      height="100"
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label={`Match score: ${score}%`}
+    >
       <circle
         cx="50"
         cy="50"
@@ -233,10 +229,7 @@ function KeywordSection({
       </div>
       <div className="flex flex-wrap gap-1.5">
         {keywords.map((keyword, i) => (
-          <span
-            key={i}
-            className={cn("px-2 py-0.5 rounded-md text-xs font-medium", tagClassName)}
-          >
+          <span key={i} className={cn("px-2 py-0.5 rounded-md text-xs font-medium", tagClassName)}>
             {keyword}
           </span>
         ))}

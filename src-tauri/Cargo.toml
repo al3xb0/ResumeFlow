@@ -1,6 +1,6 @@
 [package]
 name = "resumeflow"
-version = "0.2.5"
+version = "0.4.0"
 description = "Privacy-first ATS resume optimizer"
 authors = []
 license = "MIT"
@@ -21,6 +21,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 pdf-extract = "0.10.0"
 regex = "1"
+base64 = "0.22"
 unicode-normalization = "0.1"
 reqwest = { version = "0.12.0", features = ["rustls-tls"], default-features = false }
 scraper = "0.25.0"

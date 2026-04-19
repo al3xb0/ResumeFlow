@@ -18,9 +18,7 @@ export function Header() {
           <span className="text-primary-foreground font-bold text-sm">RF</span>
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-foreground">
-            {t("app.name")}
-          </h1>
+          <h1 className="text-lg font-semibold text-foreground">{t("app.name")}</h1>
           <p className="text-xs text-muted-foreground">{t("app.tagline")}</p>
         </div>
       </div>
@@ -41,7 +39,7 @@ export function Header() {
                 "px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
                 i18n.language === lang.code
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {lang.label}

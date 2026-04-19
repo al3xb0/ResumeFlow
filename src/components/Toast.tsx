@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { X, CheckCircle2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { useToastStore, type Toast } from "../store/useToastStore";
 import { cn } from "../lib/utils";
@@ -25,7 +26,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         "flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm",
         "animate-in slide-in-from-right-full duration-300",
         "max-w-sm w-full",
-        toastStyles[toast.type]
+        toastStyles[toast.type],
       )}
     >
       {icons[toast.type]}
@@ -56,10 +57,13 @@ export function ToastContainer() {
 
 export function useToast() {
   const addToast = useToastStore((s) => s.addToast);
-  return {
-    success: (message: string) => addToast("success", message),
-    error: (message: string) => addToast("error", message),
-    warning: (message: string) => addToast("warning", message),
-    info: (message: string) => addToast("info", message),
-  };
+  return useMemo(
+    () => ({
+      success: (message: string) => addToast("success", message),
+      error: (message: string) => addToast("error", message),
+      warning: (message: string) => addToast("warning", message),
+      info: (message: string) => addToast("info", message),
+    }),
+    [addToast],
+  );
 }

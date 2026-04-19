@@ -2,14 +2,12 @@ import { useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle, Lightbulb, Sparkles } from "lucide-react";
-import {
-  useResumeStore,
-  type VerbLintResult,
-} from "../store/useResumeStore";
+import { useResumeStore, type VerbLintResult } from "../store/useResumeStore";
 import { useToast } from "./Toast";
 
 export function ActionVerbLinter() {
   const { t } = useTranslation();
+  const toast = useToast();
   const { resumeText, verbLintResult, setVerbLintResult } = useResumeStore();
 
   useEffect(() => {
@@ -26,13 +24,12 @@ export function ActionVerbLinter() {
         setVerbLintResult(result);
       } catch (err) {
         console.error("Verb lint error:", err);
+        toast.error(t("verbLinter.error"));
       }
     }, 600);
 
     return () => clearTimeout(timeout);
-  }, [resumeText, setVerbLintResult]);
-
-  const toast = useToast();
+  }, [resumeText, setVerbLintResult, toast, t]);
 
   const handleCopySuggestion = useCallback(
     (text: string) => {
@@ -41,9 +38,11 @@ export function ActionVerbLinter() {
         .then(() => {
           toast.success(t("verbLinter.copied", { word: text }));
         })
-        .catch(() => {});
+        .catch(() => {
+          toast.error(t("common.clipboardError"));
+        });
     },
-    [toast, t]
+    [toast, t],
   );
 
   if (!verbLintResult || verbLintResult.totalIssues === 0) {
@@ -51,9 +50,7 @@ export function ActionVerbLinter() {
       return (
         <div className="flex items-center gap-2 p-3 rounded-xl bg-success/5 border border-success/20">
           <Sparkles size={14} className="text-success" />
-          <span className="text-xs text-success">
-            {t("verbLinter.allGood")}
-          </span>
+          <span className="text-xs text-success">{t("verbLinter.allGood")}</span>
         </div>
       );
     }
@@ -64,9 +61,7 @@ export function ActionVerbLinter() {
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <AlertTriangle size={14} className="text-warning" />
-        <span className="text-sm font-medium text-foreground">
-          {t("verbLinter.title")}
-        </span>
+        <span className="text-sm font-medium text-foreground">{t("verbLinter.title")}</span>
         <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold min-w-5 text-center bg-warning/15 text-warning">
           {verbLintResult.totalIssues}
         </span>
