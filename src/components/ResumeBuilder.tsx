@@ -71,6 +71,29 @@ export function ResumeBuilder() {
       (pdfMake as any).vfs =
         fontsModule.pdfMake?.vfs ?? fontsModule.default?.pdfMake?.vfs ?? fontsModule.vfs;
 
+      // Register standard PDF fonts (available in all PDF readers, no vfs needed)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (pdfMake as any).fonts = {
+        Roboto: {
+          normal: "Roboto-Regular.ttf",
+          bold: "Roboto-Medium.ttf",
+          italics: "Roboto-Italic.ttf",
+          bolditalics: "Roboto-MediumItalic.ttf",
+        },
+        Helvetica: {
+          normal: "Helvetica",
+          bold: "Helvetica-Bold",
+          italics: "Helvetica-Oblique",
+          bolditalics: "Helvetica-BoldOblique",
+        },
+        Times: {
+          normal: "Times-Roman",
+          bold: "Times-Bold",
+          italics: "Times-Italic",
+          bolditalics: "Times-BoldItalic",
+        },
+      };
+
       const visibleIds = new Set(resume.sections.filter((s) => s.visible).map((s) => s.id));
       const docDef = buildPdfDefinition(resume, visibleIds, labels, template);
 
