@@ -4,7 +4,7 @@ import type {
   ContentColumns,
   ContentText,
 } from "pdfmake/interfaces";
-import type { ResumeData, ExportLabels, TemplateId } from "../types/resume";
+import type { ResumeData, ExportLabels } from "../types/resume";
 import { defaultExportLabels } from "../types/resume";
 import { ensureHttp } from "./utils";
 
@@ -16,17 +16,10 @@ function linkText(text: string, url: string): ContentText {
   return { text, link: url, color: LINK_COLOR };
 }
 
-const TEMPLATE_PDF_FONTS: Record<TemplateId, string> = {
-  classic: "Helvetica",
-  modern: "Helvetica",
-  minimal: "Times",
-};
-
 export function buildPdfDefinition(
   data: ResumeData,
   visibleIds: Set<string>,
   labels: ExportLabels = defaultExportLabels,
-  template: TemplateId = "classic",
 ): TDocumentDefinitions {
   const content: Content[] = [];
   const p = data.personal;
@@ -284,7 +277,7 @@ export function buildPdfDefinition(
     pageMargins: [48, 40, 48, 40],
     content,
     defaultStyle: {
-      font: TEMPLATE_PDF_FONTS[template],
+      font: "Roboto",
       fontSize: 9.5,
       lineHeight: 1.2,
       color: "#222222",

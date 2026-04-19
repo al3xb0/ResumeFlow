@@ -50,6 +50,13 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate changelog
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -57,14 +64,6 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "ResumeFlow ${{ github.ref_name }}"
-          releaseBody: |
-            ## What's new
-
-            See the [full changelog](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}).
-
-            ### Installation
-            - **Windows**: Download the `.msi` or `.exe` installer
-            - **macOS**: Download the `.dmg`
-            - **Linux**: Download the `.deb` or `.AppImage`
+          releaseBody: ${{ steps.changelog.outputs.changes }}
           releaseDraft: false
           prerelease: false

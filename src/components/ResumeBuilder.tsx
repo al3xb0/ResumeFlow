@@ -72,7 +72,7 @@ export function ResumeBuilder() {
         fontsModule.pdfMake?.vfs ?? fontsModule.default?.pdfMake?.vfs ?? fontsModule.vfs;
 
       const visibleIds = new Set(resume.sections.filter((s) => s.visible).map((s) => s.id));
-      const docDef = buildPdfDefinition(resume, visibleIds, labels, template);
+      const docDef = buildPdfDefinition(resume, visibleIds, labels);
 
       const pdfDoc = pdfMake.createPdf(docDef);
       const blob = await pdfDoc.getBlob();
@@ -85,7 +85,7 @@ export function ResumeBuilder() {
       console.error("PDF export error:", err);
       toast.error(String(err));
     }
-  }, [resume, syncToAnalysis, t, toast, labels, template]);
+  }, [resume, syncToAnalysis, t, toast, labels]);
 
   const handleReset = useCallback(() => {
     if (window.confirm(t("builder.confirmReset"))) {

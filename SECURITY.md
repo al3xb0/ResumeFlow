@@ -15,7 +15,7 @@ responsibly.
 **Do NOT open a public issue.**
 
 Instead, please report vulnerabilities by opening a
-[private security advisory](https://github.com/sunos-io/ResumeFlow/security/advisories/new)
+[private security advisory](https://github.com/al3xb0/ResumeFlow/security/advisories/new)
 on GitHub.
 
 ### What to include

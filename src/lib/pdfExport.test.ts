@@ -26,16 +26,18 @@ describe("buildPdfDefinition", () => {
     expect(def).toHaveProperty("styles");
   });
 
-  it("uses Helvetica font for classic template", () => {
+  it("uses Roboto font (only font bundled in pdfmake vfs)", () => {
     const data = makeData();
     const def = buildPdfDefinition(data, allVisibleIds(data));
-    expect(def.defaultStyle).toEqual(expect.objectContaining({ font: "Helvetica" }));
+    expect(def.defaultStyle).toEqual(expect.objectContaining({ font: "Roboto" }));
   });
 
-  it("uses Times font for minimal template", () => {
+  it("always uses Roboto regardless of any future template param", () => {
     const data = makeData();
-    const def = buildPdfDefinition(data, allVisibleIds(data), undefined, "minimal");
-    expect(def.defaultStyle).toEqual(expect.objectContaining({ font: "Times" }));
+    const def1 = buildPdfDefinition(data, allVisibleIds(data));
+    const def2 = buildPdfDefinition(data, allVisibleIds(data));
+    expect(def1.defaultStyle).toEqual(def2.defaultStyle);
+    expect((def1.defaultStyle as Record<string, unknown>).font).toBe("Roboto");
   });
 
   it("includes name in content when provided", () => {
