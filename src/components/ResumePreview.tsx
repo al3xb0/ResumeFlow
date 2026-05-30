@@ -1,14 +1,15 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import DOMPurify from "dompurify";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { useBuilderStore } from "../store/useBuilderStore";
-import { templates } from "../templates/resumeTemplates";
+import { buildResumeRenderRequest } from "../lib/resumeRenderRequest";
+import { PagedResumePreview } from "./PagedResumePreview";
 import type { ExportLabels } from "../types/resume";
+import { RESUME_PAGE_HEIGHT_PX, RESUME_PAGE_WIDTH_PX } from "../types/resume";
 
 export const ResumePreview = memo(function ResumePreview() {
   const { t } = useTranslation();
-  const { resume, template } = useBuilderStore();
+  const { resume, template, layoutSettings } = useBuilderStore();
   const ZOOM_KEY = "resumeflow-zoom";
   const DEFAULT_ZOOM = 0.7;
   const [scale, setScale] = useState(() => {
@@ -35,10 +36,17 @@ export const ResumePreview = memo(function ResumePreview() {
     [t],
   );
 
-  const html = useMemo(() => {
-    const visibleIds = new Set(resume.sections.filter((s) => s.visible).map((s) => s.id));
-    return templates[template].render(resume, visibleIds, labels);
-  }, [resume, template, labels]);
+  const renderRequest = useMemo(
+    () =>
+      buildResumeRenderRequest({
+        resume,
+        labels,
+        template,
+        layoutSettings,
+      }),
+    [layoutSettings, labels, resume, template],
+  );
+  const deferredRenderRequest = useDeferredValue(renderRequest);
 
   return (
     <div className="flex flex-col h-full">
@@ -71,22 +79,13 @@ export const ResumePreview = memo(function ResumePreview() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto bg-[#e8eaed] dark:bg-[#2b2b2b] p-6">
-        <div
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: "top center",
-            width: 816,
-            margin: "0 auto",
-          }}
-        >
-          <div
-            className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.24)]"
-            style={{ width: 816, minHeight: 1056, padding: "72px" }}
-          >
-            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />
-          </div>
-        </div>
+      <div className="flex-1 overflow-auto bg-[#eef1f5] dark:bg-[#eef1f5] p-6">
+        <PagedResumePreview
+          renderRequest={deferredRenderRequest}
+          scale={scale}
+          pageWidthPx={RESUME_PAGE_WIDTH_PX}
+          pageHeightPx={RESUME_PAGE_HEIGHT_PX}
+        />
       </div>
     </div>
   );

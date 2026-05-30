@@ -1,7 +1,7 @@
 {
   "name": "resumeflow",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,7 +28,6 @@
     "i18next": "^26.0.6",
     "lucide-react": "^1.8.0",
     "mammoth": "^1.12.0",
-    "pdfmake": "^0.3.7",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-i18next": "^17.0.4",
@@ -42,7 +41,6 @@
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/pdfmake": "^0.3.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^6.0.1",

@@ -5,6 +5,7 @@ import { Globe, Type, Loader2, X } from "lucide-react";
 import { useResumeStore } from "../store/useResumeStore";
 import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
+import { getTauriErrorMessage } from "../lib/tauriError";
 
 export function JobDescription() {
   const { t } = useTranslation();
@@ -33,8 +34,9 @@ export function JobDescription() {
       setJobInputMode("text");
       toast.success(t("job.urlSuccess"));
     } catch (err) {
-      setUrlError(String(err));
-      toast.error(t("job.urlError"));
+      const message = getTauriErrorMessage(err, t, "job.urlError");
+      setUrlError(message);
+      toast.error(message);
     } finally {
       setIsFetchingUrl(false);
     }

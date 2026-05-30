@@ -3,8 +3,9 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use super::constants::EXPECTED_SECTIONS;
-use super::normalize;
+use crate::config::{AnalysisConfig, SectionMarkers};
+
+use super::{bundled_config, normalize};
 
 // ── Thresholds ──────────────────────────────────────────────────────────────
 const GOOD_WORD_COUNT: u32 = 150;
@@ -38,7 +39,15 @@ pub struct ReadabilityResult {
     pub positives: Vec<String>,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
+    analyze_readability_with_config(resume_text, bundled_config())
+}
+
+pub fn analyze_readability_with_config(
+    resume_text: &str,
+    config: &AnalysisConfig,
+) -> ReadabilityResult {
     let text = resume_text.trim();
     let norm = normalize(text);
     let word_count = text.split_whitespace().count() as u32;
@@ -61,7 +70,8 @@ pub fn analyze_readability(resume_text: &str) -> ReadabilityResult {
 
     score_word_count(word_count, &mut score, &mut warnings, &mut positives);
 
-    let (sections_found, sections_missing) = check_sections(&norm, &mut score);
+    let (sections_found, sections_missing) =
+        check_sections(&norm, &config.expected_sections, &mut score);
 
     score_line_structure(line_count, &mut score, &mut warnings, &mut positives);
     score_contact_info(text, &mut score, &mut warnings, &mut positives);
@@ -107,16 +117,20 @@ fn score_word_count(
     }
 }
 
-fn check_sections(norm: &str, score: &mut i32) -> (Vec<String>, Vec<String>) {
+fn check_sections(
+    norm: &str,
+    sections: &[SectionMarkers],
+    score: &mut i32,
+) -> (Vec<String>, Vec<String>) {
     let mut found = Vec::new();
     let mut missing = Vec::new();
 
-    for &(section_name, markers) in EXPECTED_SECTIONS {
-        if markers.iter().any(|m| norm.contains(m)) {
-            found.push(section_name.to_string());
+    for section in sections {
+        if section.markers.iter().any(|marker| norm.contains(marker)) {
+            found.push(section.name.clone());
             *score += 15;
         } else {
-            missing.push(section_name.to_string());
+            missing.push(section.name.clone());
         }
     }
 
@@ -245,7 +259,27 @@ fn check_duplicates(text: &str, score: &mut i32, warnings: &mut Vec<String>) {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
+    use crate::config::{AnalysisConfig, SectionMarkers, WeakVerbEntry};
+
     use super::*;
+
+    fn custom_config() -> AnalysisConfig {
+        AnalysisConfig {
+            tech_keywords: vec![],
+            ambiguous_keywords: vec![],
+            expected_sections: vec![SectionMarkers {
+                name: "portfolio".into(),
+                markers: vec!["portfolio".into(), "case studies".into()],
+            }],
+            nice_case: BTreeMap::new(),
+            weak_verbs_en: vec![WeakVerbEntry {
+                weak_verb: "worked".into(),
+                suggestions: vec!["engineered".into()],
+            }],
+        }
+    }
 
     #[test]
     fn test_readability_good_resume() {
@@ -319,5 +353,19 @@ mod tests {
             r.warnings.iter().any(|w| w.contains("duplicate")),
             "Should detect duplicate lines"
         );
+    }
+
+    #[test]
+    fn test_readability_uses_custom_section_markers() {
+        let result = analyze_readability_with_config(
+            "Jane Doe\nportfolio\nCurated selected work and case studies.",
+            &custom_config(),
+        );
+
+        assert!(result
+            .sections_found
+            .iter()
+            .any(|section| section == "portfolio"));
+        assert!(result.sections_missing.is_empty());
     }
 }

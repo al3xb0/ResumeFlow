@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useBuilderStore } from "./useBuilderStore";
-import { defaultResumeData } from "../types/resume";
+import {
+  DEFAULT_LAYOUT_FIELD_SPACING,
+  defaultResumeData,
+  DEFAULT_LAYOUT_FIELD_TYPOGRAPHY,
+  DEFAULT_LAYOUT_SETTINGS,
+} from "../types/resume";
 
 beforeEach(() => {
   vi.stubGlobal("crypto", { randomUUID: () => `uuid-${Date.now()}-${Math.random()}` });
-  useBuilderStore.setState({ resume: defaultResumeData(), template: "classic" });
+  useBuilderStore.setState({
+    resume: defaultResumeData(),
+    template: "classic",
+    layoutSettings: DEFAULT_LAYOUT_SETTINGS,
+  });
 });
 
 describe("useBuilderStore", () => {
@@ -13,9 +22,45 @@ describe("useBuilderStore", () => {
       expect(useBuilderStore.getState().template).toBe("classic");
     });
 
-    it("setTemplate changes template", () => {
+    it("setTemplate accepts supported Typst templates", () => {
       useBuilderStore.getState().setTemplate("modern");
       expect(useBuilderStore.getState().template).toBe("modern");
+    });
+  });
+
+  describe("layout settings", () => {
+    it("setLayoutSettings stores asymmetric margins plus per-field typography and spacing overrides", () => {
+      useBuilderStore.getState().setLayoutSettings({
+        ...DEFAULT_LAYOUT_SETTINGS,
+        pageMarginTopPx: 48,
+        pageMarginRightPx: 54,
+        pageMarginBottomPx: 60,
+        pageMarginLeftPx: 66,
+        fieldTypography: {
+          ...DEFAULT_LAYOUT_FIELD_TYPOGRAPHY,
+          ...(DEFAULT_LAYOUT_SETTINGS.fieldTypography ?? {}),
+          summary: { fontFamily: "Arial", fontSizePx: 15, fontWeight: 500, fontStyle: "italic" },
+        },
+        fieldSpacing: {
+          ...DEFAULT_LAYOUT_FIELD_SPACING,
+          ...(DEFAULT_LAYOUT_SETTINGS.fieldSpacing ?? {}),
+          summary: { marginTopPx: 4, marginBottomPx: 18, paddingBottomPx: 6 },
+        },
+      });
+
+      expect(useBuilderStore.getState().layoutSettings.pageMarginTopPx).toBe(48);
+      expect(useBuilderStore.getState().layoutSettings.pageMarginLeftPx).toBe(66);
+      expect(useBuilderStore.getState().layoutSettings.fieldTypography?.summary).toEqual({
+        fontFamily: "Arial",
+        fontSizePx: 15,
+        fontWeight: 500,
+        fontStyle: "italic",
+      });
+      expect(useBuilderStore.getState().layoutSettings.fieldSpacing?.summary).toEqual({
+        marginTopPx: 4,
+        marginBottomPx: 18,
+        paddingBottomPx: 6,
+      });
     });
   });
 
@@ -333,6 +378,22 @@ describe("useBuilderStore", () => {
       newData.personal.fullName = "New Person";
       useBuilderStore.getState().setResumeData(newData);
       expect(useBuilderStore.getState().resume.personal.fullName).toBe("New Person");
+    });
+
+    it("setResumeData normalizes imported data before hydrating the builder", () => {
+      const imported = {
+        personal: { fullName: " Imported Person " },
+        sections: [{ id: "personal", type: "personal", title: "Profile", visible: true }],
+        skills: [],
+      } as unknown as ReturnType<typeof defaultResumeData>;
+
+      useBuilderStore.getState().setResumeData(imported);
+
+      const resume = useBuilderStore.getState().resume;
+      expect(resume.personal.fullName).toBe("Imported Person");
+      expect(resume.personal.links).toEqual([]);
+      expect(resume.skills).toHaveLength(1);
+      expect(resume.sections.find((section) => section.id === "experience")).toBeDefined();
     });
   });
 

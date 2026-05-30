@@ -1,12 +1,27 @@
 import { create } from "zustand";
-import type { ResumeData, ResumeSection, TemplateId, LinkType, SkillGroup } from "../types/resume";
-import { defaultResumeData, createId } from "../types/resume";
+import type {
+  ResumeData,
+  ResumeSection,
+  TemplateId,
+  LinkType,
+  SkillGroup,
+  LayoutSettings,
+} from "../types/resume";
+import {
+  DEFAULT_LAYOUT_SETTINGS,
+  createId,
+  defaultResumeData,
+  normalizeResumeData,
+  normalizeTypstTemplate,
+} from "../types/resume";
 
 interface BuilderState {
   resume: ResumeData;
   template: TemplateId;
+  layoutSettings: LayoutSettings;
 
   setTemplate: (id: TemplateId) => void;
+  setLayoutSettings: (settings: LayoutSettings) => void;
 
   // Personal
   updatePersonal: (field: string, value: string) => void;
@@ -81,8 +96,10 @@ interface BuilderState {
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   resume: defaultResumeData(),
   template: "classic",
+  layoutSettings: DEFAULT_LAYOUT_SETTINGS,
 
-  setTemplate: (id) => set({ template: id }),
+  setTemplate: (id) => set({ template: normalizeTypstTemplate(id) }),
+  setLayoutSettings: (settings) => set({ layoutSettings: settings }),
 
   updatePersonal: (field, value) =>
     set((s) => ({
@@ -473,7 +490,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
 
   resetResume: () => set({ resume: defaultResumeData() }),
 
-  setResumeData: (data) => set({ resume: data }),
+  setResumeData: (data) => set({ resume: normalizeResumeData(data) }),
 
   getPlainText: () => {
     const r = get().resume;

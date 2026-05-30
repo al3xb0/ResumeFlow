@@ -2,11 +2,20 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Document, Page, pdfjs } from "react-pdf";
 import { invoke } from "@tauri-apps/api/core";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileEdit, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  FileEdit,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import { useResumeStore } from "../store/useResumeStore";
 import { useEditorStore } from "../store/useEditorStore";
 import { useToast } from "./Toast";
 import { cn } from "../lib/utils";
+import { getTauriErrorMessage } from "../lib/tauriError";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -16,6 +25,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 export function PdfPreview() {
+  const DEFAULT_SCALE = 0.9;
+  const MIN_SCALE = 0.25;
+  const MAX_SCALE = 3;
   const { t } = useTranslation();
   const toast = useToast();
   const { importedFilePath, resumeText } = useResumeStore();
@@ -24,7 +36,7 @@ export function PdfPreview() {
   const [pdfData, setPdfData] = useState<string | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(DEFAULT_SCALE);
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
 
   const isLoading = !!importedFilePath && loadedPath !== importedFilePath;
@@ -42,7 +54,7 @@ export function PdfPreview() {
       .catch((err) => {
         if (!cancelled) {
           console.error("Failed to load PDF:", err);
-          toast.error(t("import.extractionError"));
+          toast.error(getTauriErrorMessage(err, t, "import.extractionError"));
           setLoadedPath(importedFilePath);
         }
       });
@@ -111,8 +123,8 @@ export function PdfPreview() {
           <div className="w-px h-5 bg-border mx-2" />
 
           <button
-            onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
-            disabled={scale <= 0.5}
+            onClick={() => setScale((s) => Math.max(MIN_SCALE, +(s - 0.15).toFixed(2)))}
+            disabled={scale <= MIN_SCALE}
             aria-label={t("common.zoomOut", "Zoom out")}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 transition-colors"
           >
@@ -122,19 +134,26 @@ export function PdfPreview() {
             {Math.round(scale * 100)}%
           </span>
           <button
-            onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-            disabled={scale >= 3}
+            onClick={() => setScale((s) => Math.min(MAX_SCALE, +(s + 0.15).toFixed(2)))}
+            disabled={scale >= MAX_SCALE}
             aria-label={t("common.zoomIn", "Zoom in")}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 transition-colors"
           >
             <ZoomIn size={16} />
+          </button>
+          <button
+            onClick={() => setScale(DEFAULT_SCALE)}
+            aria-label={t("common.resetZoom", "Reset zoom")}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          >
+            <RotateCcw size={14} />
           </button>
         </div>
 
         <button
           onClick={handleConvertToEditable}
           className={cn(
-            "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
+            "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm",
             "bg-primary text-primary-foreground hover:bg-primary/90",
           )}
         >
@@ -143,7 +162,7 @@ export function PdfPreview() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto bg-secondary/20 flex justify-center p-6">
+      <div className="flex-1 overflow-auto bg-white flex justify-center p-6">
         <Document
           file={pdfData}
           onLoadSuccess={onDocumentLoadSuccess}

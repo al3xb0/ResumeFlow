@@ -6,33 +6,115 @@ import {
   AlignmentType,
   BorderStyle,
   Packer,
+  ShadingType,
 } from "docx";
-import type { ResumeData, ExportLabels, TemplateId } from "../types/resume";
-import { defaultExportLabels } from "../types/resume";
+import { resolveLayoutSettings, toDocxFontFamily } from "./layoutSettings";
+import type {
+  ResumeData,
+  ExportLabels,
+  LayoutSettings,
+  ResolvedTypographyRoleSettings,
+  TemplateId,
+} from "../types/resume";
+import { defaultExportLabels, DEFAULT_LAYOUT_SETTINGS } from "../types/resume";
+import { getTemplateTheme, type TemplateTheme } from "../templates/templateThemes";
 import { ensureHttp } from "./utils";
 
-const TEMPLATE_DOCX_FONTS: Record<TemplateId, string> = {
-  classic: "Segoe UI",
-  modern: "Segoe UI",
-  minimal: "Georgia",
-};
-const LINK_COLOR = "2563EB";
+interface RoleRunStyle {
+  font: string;
+  size: number;
+  bold: boolean;
+  italics: boolean;
+}
 
-function linkedRun(text: string, url: string, size = 19): ExternalHyperlink {
+function hexToDocxColor(hex: string): string {
+  return hex.replace(/^#/, "").toUpperCase();
+}
+
+function roleRunOptions(settings: ResolvedTypographyRoleSettings): RoleRunStyle {
+  return {
+    font: toDocxFontFamily(settings.fontFamily),
+    size: Math.round(settings.fontSizePx * 1.5),
+    bold: settings.fontWeight >= 600,
+    italics: settings.fontStyle === "italic",
+  };
+}
+
+function themedTextRun(
+  text: string,
+  color: string,
+  settings: ResolvedTypographyRoleSettings,
+  overrides: Partial<RoleRunStyle> = {},
+): TextRun {
+  return new TextRun({
+    text,
+    color: hexToDocxColor(color),
+    ...roleRunOptions(settings),
+    ...overrides,
+  });
+}
+
+function linkedRun(
+  text: string,
+  url: string,
+  color: string,
+  settings: ResolvedTypographyRoleSettings,
+  overrides: Partial<RoleRunStyle> = {},
+): ExternalHyperlink {
   return new ExternalHyperlink({
-    children: [new TextRun({ text, color: LINK_COLOR, size })],
+    children: [
+      new TextRun({
+        text,
+        color: hexToDocxColor(color),
+        ...roleRunOptions(settings),
+        ...overrides,
+      }),
+    ],
     link: url,
   });
 }
 
-function sectionHeading(title: string): Paragraph {
+function themedBadgeRun(
+  text: string,
+  fill: string,
+  color: string,
+  settings: ResolvedTypographyRoleSettings,
+): TextRun {
+  return new TextRun({
+    text: ` ${text} `,
+    color: hexToDocxColor(color),
+    shading: { fill: hexToDocxColor(fill), type: ShadingType.CLEAR },
+    ...roleRunOptions(settings),
+  });
+}
+
+function sectionHeading(
+  title: string,
+  theme: TemplateTheme,
+  settings: ResolvedTypographyRoleSettings,
+): Paragraph {
+  const headingText = theme.section.uppercase ? title.toUpperCase() : title;
+
   return new Paragraph({
-    children: [new TextRun({ text: title.toUpperCase(), bold: true, size: 22, color: "111111" })],
+    children: [themedTextRun(headingText, theme.section.headingColor, settings)],
     spacing: { before: 200, after: 60 },
     border: {
-      bottom: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
+      bottom: {
+        style: theme.section.ruleWidth > 1 ? BorderStyle.THICK : BorderStyle.SINGLE,
+        size: theme.section.ruleWidth > 1 ? 6 : 1,
+        color: hexToDocxColor(theme.section.ruleColor),
+      },
     },
   });
+}
+
+function headerShading(theme: TemplateTheme) {
+  if (!theme.header.backgroundColor) return undefined;
+
+  return {
+    fill: hexToDocxColor(theme.header.backgroundColor),
+    type: ShadingType.CLEAR,
+  };
 }
 
 function dateRange(start: string, end: string): string {
@@ -45,51 +127,70 @@ export function buildDocxDocument(
   visibleIds: Set<string>,
   labels: ExportLabels = defaultExportLabels,
   template: TemplateId = "classic",
+  layoutSettings: LayoutSettings = DEFAULT_LAYOUT_SETTINGS,
 ): Document {
   const children: Paragraph[] = [];
   const p = data.personal;
+  const theme = getTemplateTheme(template);
+  const headerFill = headerShading(theme);
+  const resolvedLayoutSettings = resolveLayoutSettings(layoutSettings, template);
+  const {
+    body,
+    contacts,
+    entryTitle,
+    meta,
+    name,
+    sectionHeading: sectionHeadingTypography,
+    title,
+  } = resolvedLayoutSettings.typography;
 
   if (visibleIds.has("personal")) {
     if (p.fullName) {
       children.push(
         new Paragraph({
-          children: [new TextRun({ text: p.fullName, bold: true, size: 32 })],
+          children: [themedTextRun(p.fullName, theme.header.nameColor, name)],
           alignment: AlignmentType.CENTER,
-          spacing: { after: 40 },
+          spacing: { after: p.title ? 20 : 40 },
+          shading: headerFill,
         }),
       );
     }
     if (p.title) {
       children.push(
         new Paragraph({
-          children: [new TextRun({ text: p.title, size: 22, color: "555555" })],
+          children: [themedTextRun(p.title, theme.header.titleColor, title)],
           alignment: AlignmentType.CENTER,
-          spacing: { after: 80 },
+          spacing: { after: 60 },
+          shading: headerFill,
         }),
       );
     }
     const contactChildren: (TextRun | ExternalHyperlink)[] = [];
     const addSep = () => {
       if (contactChildren.length) {
-        contactChildren.push(new TextRun({ text: "  |  ", size: 18, color: "666666" }));
+        contactChildren.push(
+          themedTextRun(theme.header.separator, theme.header.contactColor, contacts),
+        );
       }
     };
     if (p.email) {
       addSep();
-      contactChildren.push(linkedRun(p.email, `mailto:${p.email}`, 18));
+      contactChildren.push(linkedRun(p.email, `mailto:${p.email}`, theme.linkColor, contacts));
     }
     if (p.phone) {
       addSep();
-      contactChildren.push(new TextRun({ text: p.phone, size: 18, color: "666666" }));
+      contactChildren.push(themedTextRun(p.phone, theme.header.contactColor, contacts));
     }
     if (p.location) {
       addSep();
-      contactChildren.push(new TextRun({ text: p.location, size: 18, color: "666666" }));
+      contactChildren.push(themedTextRun(p.location, theme.header.contactColor, contacts));
     }
     for (const link of p.links) {
       if (link.url) {
         addSep();
-        contactChildren.push(linkedRun(link.label || link.url, ensureHttp(link.url), 18));
+        contactChildren.push(
+          linkedRun(link.label || link.url, ensureHttp(link.url), theme.linkColor, contacts),
+        );
       }
     }
     if (contactChildren.length) {
@@ -98,6 +199,7 @@ export function buildDocxDocument(
           children: contactChildren,
           alignment: AlignmentType.CENTER,
           spacing: { after: 120 },
+          shading: headerFill,
         }),
       );
     }
@@ -110,10 +212,10 @@ export function buildDocxDocument(
     switch (sec.type) {
       case "summary":
         if (data.summary) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           children.push(
             new Paragraph({
-              children: [new TextRun({ text: data.summary, size: 20 })],
+              children: [themedTextRun(data.summary, theme.bodyColor, body)],
               spacing: { after: 120 },
             }),
           );
@@ -122,14 +224,14 @@ export function buildDocxDocument(
 
       case "experience":
         if (data.experience.length) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const exp of data.experience) {
             const titleRuns: TextRun[] = [
-              new TextRun({ text: exp.position, bold: true, size: 21 }),
+              themedTextRun(exp.position, theme.entry.titleColor, entryTitle),
             ];
             const date = dateRange(exp.startDate, exp.current ? labels.present : exp.endDate);
             if (date) {
-              titleRuns.push(new TextRun({ text: `\t${date}`, size: 18, color: "666666" }));
+              titleRuns.push(themedTextRun(`\t${date}`, theme.entry.dateColor, meta));
             }
             children.push(
               new Paragraph({ children: titleRuns, spacing: { before: 80, after: 20 } }),
@@ -139,7 +241,7 @@ export function buildDocxDocument(
             if (sub) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: sub, size: 19, color: "555555" })],
+                  children: [themedTextRun(sub, theme.entry.detailColor, meta)],
                   spacing: { after: 40 },
                 }),
               );
@@ -148,7 +250,7 @@ export function buildDocxDocument(
             for (const b of exp.bullets.filter((x) => x.trim())) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: b, size: 19 })],
+                  children: [themedTextRun(b, theme.bodyColor, body)],
                   bullet: { level: 0 },
                   spacing: { after: 20 },
                 }),
@@ -160,15 +262,15 @@ export function buildDocxDocument(
 
       case "education":
         if (data.education.length) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const edu of data.education) {
             const degreeField = [edu.degree, edu.field].filter(Boolean).join(" in ");
             const titleRuns: TextRun[] = [
-              new TextRun({ text: degreeField || edu.institution, bold: true, size: 21 }),
+              themedTextRun(degreeField || edu.institution, theme.entry.titleColor, entryTitle),
             ];
             const date = dateRange(edu.startDate, edu.endDate);
             if (date) {
-              titleRuns.push(new TextRun({ text: `\t${date}`, size: 18, color: "666666" }));
+              titleRuns.push(themedTextRun(`\t${date}`, theme.entry.dateColor, meta));
             }
             children.push(
               new Paragraph({ children: titleRuns, spacing: { before: 80, after: 20 } }),
@@ -180,7 +282,7 @@ export function buildDocxDocument(
                 : edu.institution;
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: instText, size: 19, color: "555555" })],
+                  children: [themedTextRun(instText, theme.entry.detailColor, meta)],
                   spacing: { after: 40 },
                 }),
               );
@@ -191,28 +293,82 @@ export function buildDocxDocument(
 
       case "skills":
         if (data.skills.some((g) => g.items.some(Boolean))) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const group of data.skills) {
             const items = group.items.filter(Boolean);
             if (!items.length) continue;
-            const runs: TextRun[] = [];
-            if (group.name) {
-              runs.push(new TextRun({ text: `${group.name}: `, bold: true, size: 19 }));
+            if (
+              template === "modern" &&
+              theme.skills.badgeBackgroundColor &&
+              theme.skills.badgeTextColor
+            ) {
+              if (group.name) {
+                children.push(
+                  new Paragraph({
+                    children: [themedTextRun(group.name, theme.entry.titleColor, entryTitle)],
+                    spacing: { after: 20 },
+                  }),
+                );
+              }
+
+              const runs: TextRun[] = [];
+              for (let i = 0; i < items.length; i++) {
+                if (i > 0) runs.push(new TextRun({ text: "  ", ...roleRunOptions(body) }));
+                runs.push(
+                  themedBadgeRun(
+                    items[i],
+                    theme.skills.badgeBackgroundColor,
+                    theme.skills.badgeTextColor,
+                    body,
+                  ),
+                );
+              }
+              children.push(new Paragraph({ children: runs, spacing: { after: 40 } }));
+            } else {
+              const runs: TextRun[] = [];
+              if (group.name) {
+                runs.push(themedTextRun(`${group.name}: `, theme.entry.titleColor, entryTitle));
+              }
+              runs.push(themedTextRun(items.join(theme.skills.delimiter), theme.bodyColor, body));
+              children.push(new Paragraph({ children: runs, spacing: { after: 40 } }));
             }
-            runs.push(new TextRun({ text: items.join(", "), size: 19 }));
-            children.push(new Paragraph({ children: runs, spacing: { after: 40 } }));
           }
         }
         break;
 
       case "languages":
         if (data.languages.length) {
-          children.push(sectionHeading(sec.title));
-          for (const lang of data.languages) {
-            const txt = lang.proficiency ? `${lang.language} — ${lang.proficiency}` : lang.language;
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
+          if (
+            template === "modern" &&
+            theme.languages.badgeBackgroundColor &&
+            theme.languages.badgeTextColor
+          ) {
+            const runs: TextRun[] = [];
+            const items = data.languages.map((lang) =>
+              lang.proficiency ? `${lang.language} · ${lang.proficiency}` : lang.language,
+            );
+            for (let i = 0; i < items.length; i++) {
+              if (i > 0) runs.push(new TextRun({ text: "  ", ...roleRunOptions(body) }));
+              runs.push(
+                themedBadgeRun(
+                  items[i],
+                  theme.languages.badgeBackgroundColor,
+                  theme.languages.badgeTextColor,
+                  body,
+                ),
+              );
+            }
+            children.push(new Paragraph({ children: runs, spacing: { after: 40 } }));
+          } else {
+            const text = data.languages
+              .map((lang) =>
+                lang.proficiency ? `${lang.language} (${lang.proficiency})` : lang.language,
+              )
+              .join(theme.languages.delimiter);
             children.push(
               new Paragraph({
-                children: [new TextRun({ text: txt, size: 19 })],
+                children: [themedTextRun(text, theme.bodyColor, body)],
                 spacing: { after: 20 },
               }),
             );
@@ -222,17 +378,20 @@ export function buildDocxDocument(
 
       case "certifications":
         if (data.certifications.length) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const cert of data.certifications) {
             const certChildren: (TextRun | ExternalHyperlink)[] = [];
             if (cert.url) {
-              certChildren.push(linkedRun(cert.name, ensureHttp(cert.url)));
+              certChildren.push(
+                linkedRun(cert.name, ensureHttp(cert.url), theme.linkColor, entryTitle),
+              );
             } else {
-              certChildren.push(new TextRun({ text: cert.name, size: 19 }));
+              certChildren.push(themedTextRun(cert.name, theme.entry.titleColor, entryTitle));
             }
             if (cert.issuer)
-              certChildren.push(new TextRun({ text: ` — ${cert.issuer}`, size: 19 }));
-            if (cert.date) certChildren.push(new TextRun({ text: ` — ${cert.date}`, size: 19 }));
+              certChildren.push(themedTextRun(` — ${cert.issuer}`, theme.entry.detailColor, meta));
+            if (cert.date)
+              certChildren.push(themedTextRun(` — ${cert.date}`, theme.entry.dateColor, meta));
             children.push(new Paragraph({ children: certChildren, spacing: { after: 40 } }));
           }
         }
@@ -240,25 +399,29 @@ export function buildDocxDocument(
 
       case "projects":
         if (data.projects.length) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const proj of data.projects) {
             const nameChildren: (TextRun | ExternalHyperlink)[] = proj.url
               ? [
                   new ExternalHyperlink({
                     children: [
-                      new TextRun({ text: proj.name, bold: true, color: LINK_COLOR, size: 21 }),
+                      new TextRun({
+                        text: proj.name,
+                        color: hexToDocxColor(theme.linkColor),
+                        ...roleRunOptions(entryTitle),
+                      }),
                     ],
                     link: ensureHttp(proj.url),
                   }),
                 ]
-              : [new TextRun({ text: proj.name, bold: true, size: 21 })];
+              : [themedTextRun(proj.name, theme.entry.titleColor, entryTitle)];
             children.push(
               new Paragraph({ children: nameChildren, spacing: { before: 80, after: 20 } }),
             );
             if (proj.description) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: proj.description, size: 19 })],
+                  children: [themedTextRun(proj.description, theme.bodyColor, body)],
                   spacing: { after: 20 },
                 }),
               );
@@ -267,11 +430,11 @@ export function buildDocxDocument(
               children.push(
                 new Paragraph({
                   children: [
-                    new TextRun({
-                      text: `Technologies: ${proj.technologies}`,
-                      size: 19,
-                      italics: true,
-                    }),
+                    themedTextRun(
+                      `Technologies: ${proj.technologies}`,
+                      theme.entry.detailColor,
+                      meta,
+                    ),
                   ],
                   spacing: { after: 20 },
                 }),
@@ -283,12 +446,14 @@ export function buildDocxDocument(
 
       case "volunteer":
         if (data.volunteer.length) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const vol of data.volunteer) {
-            const titleRuns: TextRun[] = [new TextRun({ text: vol.role, bold: true, size: 21 })];
+            const titleRuns: TextRun[] = [
+              themedTextRun(vol.role, theme.entry.titleColor, entryTitle),
+            ];
             const date = dateRange(vol.startDate, vol.endDate);
             if (date) {
-              titleRuns.push(new TextRun({ text: `\t${date}`, size: 18, color: "666666" }));
+              titleRuns.push(themedTextRun(`\t${date}`, theme.entry.dateColor, meta));
             }
             children.push(
               new Paragraph({ children: titleRuns, spacing: { before: 80, after: 20 } }),
@@ -296,7 +461,7 @@ export function buildDocxDocument(
             if (vol.organization) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: vol.organization, size: 19, color: "555555" })],
+                  children: [themedTextRun(vol.organization, theme.entry.detailColor, meta)],
                   spacing: { after: 20 },
                 }),
               );
@@ -304,7 +469,7 @@ export function buildDocxDocument(
             if (vol.description) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: vol.description, size: 19 })],
+                  children: [themedTextRun(vol.description, theme.bodyColor, body)],
                   spacing: { after: 40 },
                 }),
               );
@@ -316,12 +481,12 @@ export function buildDocxDocument(
       case "custom": {
         const entries = data.customSections[sec.id] ?? [];
         if (entries.length) {
-          children.push(sectionHeading(sec.title));
+          children.push(sectionHeading(sec.title, theme, sectionHeadingTypography));
           for (const entry of entries) {
             if (entry.title) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: entry.title, bold: true, size: 20 })],
+                  children: [themedTextRun(entry.title, theme.entry.titleColor, entryTitle)],
                   spacing: { after: 20 },
                 }),
               );
@@ -329,7 +494,7 @@ export function buildDocxDocument(
             if (entry.description) {
               children.push(
                 new Paragraph({
-                  children: [new TextRun({ text: entry.description, size: 19 })],
+                  children: [themedTextRun(entry.description, theme.bodyColor, body)],
                   spacing: { after: 40 },
                 }),
               );
@@ -345,11 +510,25 @@ export function buildDocxDocument(
     styles: {
       default: {
         document: {
-          run: { font: TEMPLATE_DOCX_FONTS[template] },
+          run: { font: toDocxFontFamily(body.fontFamily) },
         },
       },
     },
-    sections: [{ children }],
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: {
+              top: Math.round(resolvedLayoutSettings.top * 15),
+              right: Math.round(resolvedLayoutSettings.right * 15),
+              bottom: Math.round(resolvedLayoutSettings.bottom * 15),
+              left: Math.round(resolvedLayoutSettings.left * 15),
+            },
+          },
+        },
+        children,
+      },
+    ],
   });
 }
 
@@ -358,7 +537,8 @@ export async function generateDocxBlob(
   visibleIds: Set<string>,
   labels: ExportLabels = defaultExportLabels,
   template: TemplateId = "classic",
+  layoutSettings: LayoutSettings = DEFAULT_LAYOUT_SETTINGS,
 ): Promise<Blob> {
-  const doc = buildDocxDocument(data, visibleIds, labels, template);
+  const doc = buildDocxDocument(data, visibleIds, labels, template, layoutSettings);
   return Packer.toBlob(doc);
 }

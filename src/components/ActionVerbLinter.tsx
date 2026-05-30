@@ -3,15 +3,19 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle, Lightbulb, Sparkles } from "lucide-react";
 import { useResumeStore, type VerbLintResult } from "../store/useResumeStore";
+import { useEditorStore } from "../store/useEditorStore";
 import { useToast } from "./Toast";
+import { getTauriErrorMessage } from "../lib/tauriError";
 
 export function ActionVerbLinter() {
   const { t } = useTranslation();
   const toast = useToast();
+  const { activeTab } = useEditorStore();
   const { resumeText, verbLintResult, setVerbLintResult } = useResumeStore();
 
   useEffect(() => {
-    if (!resumeText.trim()) {
+    if (!resumeText.trim() || activeTab !== "import") {
+      if (activeTab !== "import") return;
       setVerbLintResult(null);
       return;
     }
@@ -24,12 +28,12 @@ export function ActionVerbLinter() {
         setVerbLintResult(result);
       } catch (err) {
         console.error("Verb lint error:", err);
-        toast.error(t("verbLinter.error"));
+        toast.error(getTauriErrorMessage(err, t, "verbLinter.error"));
       }
     }, 600);
 
     return () => clearTimeout(timeout);
-  }, [resumeText, setVerbLintResult, toast, t]);
+  }, [resumeText, activeTab, setVerbLintResult, toast, t]);
 
   const handleCopySuggestion = useCallback(
     (text: string) => {

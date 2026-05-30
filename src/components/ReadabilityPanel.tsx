@@ -2,15 +2,21 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { FileText, AlertTriangle, CheckCircle2, XCircle, Eye } from "lucide-react";
 import { useResumeStore, type ReadabilityResult } from "../store/useResumeStore";
+import { useEditorStore } from "../store/useEditorStore";
 import { cn } from "../lib/utils";
 import { useEffect } from "react";
+import { useToast } from "./Toast";
+import { getTauriErrorMessage } from "../lib/tauriError";
 
 export function ReadabilityPanel() {
   const { t } = useTranslation();
+  const toast = useToast();
+  const { activeTab } = useEditorStore();
   const { resumeText, readabilityResult, setReadabilityResult } = useResumeStore();
 
   useEffect(() => {
-    if (!resumeText.trim()) {
+    if (!resumeText.trim() || activeTab !== "import") {
+      if (activeTab !== "import") return;
       setReadabilityResult(null);
       return;
     }
@@ -23,11 +29,12 @@ export function ReadabilityPanel() {
         setReadabilityResult(result);
       } catch (err) {
         console.error("Readability check error:", err);
+        toast.error(getTauriErrorMessage(err, t, "errors.unknown"));
       }
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [resumeText, setReadabilityResult]);
+  }, [resumeText, activeTab, setReadabilityResult, t, toast]);
 
   if (!readabilityResult) {
     return (
@@ -62,7 +69,7 @@ export function ReadabilityPanel() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div
         className={cn("flex items-center justify-between rounded-xl border p-4", scoreBg[variant])}
       >
@@ -70,7 +77,7 @@ export function ReadabilityPanel() {
           <FileText size={16} className={getScoreColor(score)} />
           <span className="text-sm font-medium text-foreground">{t("readability.score")}</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           <span className="text-xs text-muted-foreground">
             {t("readability.wordCount")}: <strong className="text-foreground">{wordCount}</strong>
           </span>
@@ -80,7 +87,7 @@ export function ReadabilityPanel() {
 
       {sectionsFound.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="flex items-center gap-1.5 mb-2">
             <CheckCircle2 size={12} className="text-success" />
             <span className="text-xs font-medium text-muted-foreground">
               {t("readability.sectionsFound")}
@@ -101,7 +108,7 @@ export function ReadabilityPanel() {
 
       {sectionsMissing.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="flex items-center gap-1.5 mb-2">
             <XCircle size={12} className="text-muted-foreground" />
             <span className="text-xs font-medium text-muted-foreground">
               {t("readability.sectionsMissing")}
@@ -122,7 +129,7 @@ export function ReadabilityPanel() {
 
       {warnings.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="flex items-center gap-1.5 mb-2">
             <AlertTriangle size={12} className="text-warning" />
             <span className="text-xs font-medium text-muted-foreground">
               {t("readability.warnings")}
@@ -141,7 +148,7 @@ export function ReadabilityPanel() {
 
       {positives.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="flex items-center gap-1.5 mb-2">
             <CheckCircle2 size={12} className="text-success" />
             <span className="text-xs font-medium text-muted-foreground">
               {t("readability.positives")}
