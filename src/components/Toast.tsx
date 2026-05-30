@@ -11,10 +11,10 @@ const icons = {
 } as const;
 
 const toastStyles = {
-  success: "border-success/20 bg-success/5",
-  error: "border-destructive/20 bg-destructive/5",
-  warning: "border-warning/20 bg-warning/5",
-  info: "border-primary/20 bg-primary/5",
+  success: "border-success/40 bg-card/95 shadow-success/10",
+  error: "border-destructive/40 bg-card/95 shadow-destructive/10",
+  warning: "border-warning/40 bg-card/95 shadow-warning/10",
+  info: "border-primary/40 bg-card/95 shadow-primary/10",
 } as const;
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -23,17 +23,17 @@ function ToastItem({ toast }: { toast: Toast }) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm",
+        "flex items-start gap-3 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-sm",
         "animate-in slide-in-from-right-full duration-300",
         "max-w-sm w-full",
         toastStyles[toast.type],
       )}
     >
       {icons[toast.type]}
-      <p className="text-sm text-foreground flex-1">{toast.message}</p>
+      <p className="text-sm text-card-foreground flex-1">{toast.message}</p>
       <button
         onClick={() => removeToast(toast.id)}
-        className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors shrink-0"
+        className="p-1 rounded-md text-muted-foreground hover:text-card-foreground hover:bg-white/8 transition-colors shrink-0"
       >
         <X size={14} />
       </button>

@@ -3,10 +3,12 @@ import { FileUp, X, Loader2, Link as LinkIcon } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useResumeStore } from "../store/useResumeStore";
 import { useResumeImport } from "../hooks/useResumeImport";
+import { useEditorStore } from "../store/useEditorStore";
 import { cn } from "../lib/utils";
 
 export function ResumeImport() {
   const { t } = useTranslation();
+  const { clearEditor } = useEditorStore();
   const { resumeText, resumeFileName, isExtracting, pdfLinks, setResumeText, clearResume } =
     useResumeStore();
   const { handleFileSelect, handleClearText } = useResumeImport();
@@ -52,7 +54,10 @@ export function ResumeImport() {
             <span className="text-xs text-success">✓ {t("import.extracted")}</span>
           </div>
           <button
-            onClick={() => clearResume()}
+            onClick={() => {
+              clearResume();
+              clearEditor();
+            }}
             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
             title={t("import.clear")}
           >

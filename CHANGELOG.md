@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-30
+
+### Added
+
+- Shared template theme tokens for export styling across PDF and DOCX
+- Builder resume normalization on store hydration to harden imported PDF/DOCX data
+- Typst-based paged preview and PDF export pipeline shared between the builder preview and PDF export flow
+- Builder-side page margin panel plus inline semantic-field layout popovers for typography and per-field margin/padding overrides
+- Import-focused editing/preview workflow, including the new import workspace and supporting import-preview strings/errors
+- Runtime analysis config loading, structured Tauri error mapping, and focused tests around preview/render/export flows
+
+### Changed
+
+- PDF export now preserves the selected builder template instead of collapsing to the classic style
+- DOCX export now keeps template-specific font and accent styling as a best-effort office-document export
+- README now reflects the current CI baseline, runtime analysis config layout, and export fidelity model
+- Resume preview is now a cleaner zoom + page surface instead of carrying the full layout inspector above the document
+- Layout settings now use per-side page margins plus a per-field box model shared by the React builder and Rust Typst renderer
+- PDF export and preview now reuse the same render request, while DOCX export keeps template-aware styling as a best-effort office export
+- Builder, analysis, and import surfaces were refactored around the new preview/export pipeline and inline layout controls
+
+### Fixed
+
+- The builder-to-PDF export path now passes the selected template through to the exporter
+- Template-specific PDF backgrounds, colors, and typography are no longer ignored during export
+
 ## [0.4.0] - 2026-04-19
 
 ### Added

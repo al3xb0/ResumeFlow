@@ -35,6 +35,6 @@ export default defineConfig(async () => ({
     },
   },
   optimizeDeps: {
-    include: ["pdfjs-dist", "html-to-docx"],
+    include: ["pdfjs-dist"],
   },
 }));

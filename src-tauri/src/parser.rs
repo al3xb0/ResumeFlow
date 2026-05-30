@@ -5,6 +5,9 @@ use std::sync::LazyLock;
 use pdf_extract::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
 use regex::Regex;
 use serde::Serialize;
+use tracing::debug;
+
+use crate::error::AppError;
 
 // ---------------------------------------------------------------------------
 // Custom PDF text extractor with adaptive word-spacing detection
@@ -251,11 +254,12 @@ impl OutputDev for SmartTextOutput {
 // Public API
 // ---------------------------------------------------------------------------
 
-pub fn extract_text_from_pdf(file_path: &str) -> Result<String, String> {
+pub fn extract_text_from_pdf(file_path: &str) -> Result<String, AppError> {
     let path = Path::new(file_path);
+    debug!(operation = "extract_pdf_text", "Extracting text from PDF");
 
     if !path.exists() {
-        return Err("File not found".to_string());
+        return Err(AppError::file_not_found(path));
     }
 
     let extension = path
@@ -265,27 +269,26 @@ pub fn extract_text_from_pdf(file_path: &str) -> Result<String, String> {
 
     match extension.as_deref() {
         Some("pdf") => extract_pdf(file_path),
-        _ => Err("Unsupported file format. Please provide a PDF file.".to_string()),
+        _ => Err(AppError::UnsupportedFileFormat { expected: "pdf" }),
     }
 }
 
-fn extract_pdf(file_path: &str) -> Result<String, String> {
+fn extract_pdf(file_path: &str) -> Result<String, AppError> {
     let mut output = SmartTextOutput::new();
 
-    let doc =
-        pdf_extract::Document::load(file_path).map_err(|e| format!("Failed to load PDF: {}", e))?;
+    let doc = pdf_extract::Document::load(file_path).map_err(|error| AppError::PdfOpen {
+        details: error.to_string(),
+    })?;
 
-    pdf_extract::output_doc(&doc, &mut output)
-        .map_err(|e| format!("Failed to extract PDF text: {}", e))?;
+    pdf_extract::output_doc(&doc, &mut output).map_err(|error| AppError::PdfTextExtract {
+        details: error.to_string(),
+    })?;
 
     let raw = output.into_string();
     let cleaned = clean_extracted_text(&raw);
 
     if cleaned.is_empty() {
-        return Err(
-            "The PDF appears to contain no extractable text. It may be a scanned document."
-                .to_string(),
-        );
+        return Err(AppError::PdfNoText);
     }
 
     Ok(cleaned)
@@ -301,13 +304,15 @@ pub struct PdfLink {
     pub page: u32,
 }
 
-pub fn extract_links_from_pdf(file_path: &str) -> Result<Vec<PdfLink>, String> {
+pub fn extract_links_from_pdf(file_path: &str) -> Result<Vec<PdfLink>, AppError> {
     let path = Path::new(file_path);
     if !path.exists() {
-        return Err("File not found".to_string());
+        return Err(AppError::file_not_found(path));
     }
 
-    let doc = Document::load(file_path).map_err(|e| format!("Failed to load PDF: {}", e))?;
+    let doc = Document::load(file_path).map_err(|error| AppError::PdfOpen {
+        details: error.to_string(),
+    })?;
 
     let mut links = Vec::new();
 
@@ -355,9 +360,7 @@ pub fn extract_links_from_pdf(file_path: &str) -> Result<Vec<PdfLink>, String> {
             // Get /URI from the action
             if let Ok(uri_obj) = action.get(b"URI") {
                 let uri_str = match doc.dereference(uri_obj) {
-                    Ok((_, Object::String(bytes, _))) => {
-                        String::from_utf8_lossy(bytes).to_string()
-                    }
+                    Ok((_, Object::String(bytes, _))) => String::from_utf8_lossy(bytes).to_string(),
                     _ => continue,
                 };
 

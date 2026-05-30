@@ -2,8 +2,9 @@ use std::collections::HashSet;
 
 use regex::Regex;
 
-use super::constants::{AMBIGUOUS_LANG, NICE_CASE, TECH_KEYWORDS};
-use super::normalize;
+use crate::config::AnalysisConfig;
+
+use super::{bundled_config, normalize};
 
 #[derive(Clone, Debug)]
 struct Keyword {
@@ -21,8 +22,17 @@ pub struct AnalysisResult {
     pub total_keywords: u32,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn analyze_match(resume_text: &str, job_description: &str) -> AnalysisResult {
-    let keywords = extract_keywords(job_description);
+    analyze_match_with_config(resume_text, job_description, bundled_config())
+}
+
+pub fn analyze_match_with_config(
+    resume_text: &str,
+    job_description: &str,
+    config: &AnalysisConfig,
+) -> AnalysisResult {
+    let keywords = extract_keywords(job_description, config);
     let norm_resume = normalize(resume_text);
 
     let mut found: Vec<String> = Vec::new();
@@ -69,12 +79,12 @@ fn word_boundary_pattern(needle: &str) -> String {
     )
 }
 
-fn extract_keywords(job_text: &str) -> Vec<Keyword> {
+fn extract_keywords(job_text: &str, config: &AnalysisConfig) -> Vec<Keyword> {
     let norm_job = normalize(job_text);
     let mut seen: HashSet<String> = HashSet::new();
     let mut keywords: Vec<Keyword> = Vec::new();
 
-    for &tech in TECH_KEYWORDS {
+    for tech in &config.tech_keywords {
         let needle = tech.to_lowercase();
         if !norm_job.contains(&needle) {
             continue;
@@ -84,7 +94,12 @@ fn extract_keywords(job_text: &str) -> Vec<Keyword> {
             continue;
         }
 
-        if AMBIGUOUS_LANG.contains(&needle.as_str()) && !is_tech_mention(&needle, &norm_job) {
+        if config
+            .ambiguous_keywords
+            .iter()
+            .any(|keyword| keyword == &needle)
+            && !is_tech_mention(&needle, &norm_job)
+        {
             continue;
         }
 
@@ -93,7 +108,7 @@ fn extract_keywords(job_text: &str) -> Vec<Keyword> {
             if re.is_match(&norm_job) {
                 seen.insert(canon);
                 keywords.push(Keyword {
-                    label: nice_case(tech),
+                    label: nice_case(tech, config),
                     needle,
                     weight: 3,
                 });
@@ -116,12 +131,11 @@ fn is_tech_mention(word: &str, text: &str) -> bool {
     false
 }
 
-fn nice_case(s: &str) -> String {
-    for &(key, display) in NICE_CASE {
-        if key == s {
-            return display.to_string();
-        }
+fn nice_case(s: &str, config: &AnalysisConfig) -> String {
+    if let Some(display) = config.nice_case.get(&s.to_lowercase()) {
+        return display.clone();
     }
+
     s.split_whitespace()
         .map(|w| {
             let mut chars = w.chars();
@@ -168,7 +182,34 @@ fn keyword_in_text(needle: &str, haystack: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
+    use crate::config::{AnalysisConfig, SectionMarkers, WeakVerbEntry};
+
     use super::*;
+
+    fn custom_config(tech_keywords: &[&str]) -> AnalysisConfig {
+        AnalysisConfig {
+            tech_keywords: tech_keywords
+                .iter()
+                .map(|keyword| keyword.to_string())
+                .collect(),
+            ambiguous_keywords: vec!["go".into()],
+            expected_sections: vec![SectionMarkers {
+                name: "skills".into(),
+                markers: vec!["skills".into()],
+            }],
+            nice_case: BTreeMap::from([
+                ("go".into(), "Go".into()),
+                ("machine vision".into(), "Machine Vision".into()),
+                ("rust".into(), "Rust".into()),
+            ]),
+            weak_verbs_en: vec![WeakVerbEntry {
+                weak_verb: "worked".into(),
+                suggestions: vec!["engineered".into()],
+            }],
+        }
+    }
 
     #[test]
     fn test_real_world_no_false_positives() {
@@ -297,5 +338,42 @@ mod tests {
             "Node.js should be found when resume has 'NodeJS' and job has 'Node.js'. Found: {:?}, Missing: {:?}",
             result2.found_keywords, result2.missing_keywords
         );
+    }
+
+    #[test]
+    fn test_custom_config_keyword_is_used() {
+        let config = custom_config(&["machine vision", "rust"]);
+        let result = analyze_match_with_config(
+            "Built machine vision pipelines in Rust",
+            "Looking for experience with machine vision and Rust",
+            &config,
+        );
+
+        assert!(
+            result
+                .found_keywords
+                .iter()
+                .any(|keyword| keyword == "Machine Vision"),
+            "custom config keyword should be matched"
+        );
+    }
+
+    #[test]
+    fn test_custom_config_still_filters_ambiguous_go() {
+        let config = custom_config(&["go", "rust"]);
+        let result = analyze_match_with_config(
+            "Rust engineer",
+            "We need a go-to-market specialist with Rust experience",
+            &config,
+        );
+
+        let all: Vec<String> = result
+            .found_keywords
+            .iter()
+            .chain(result.missing_keywords.iter())
+            .map(|keyword| keyword.to_lowercase())
+            .collect();
+
+        assert!(!all.contains(&"go".to_string()));
     }
 }

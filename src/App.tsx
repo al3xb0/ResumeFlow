@@ -1,17 +1,22 @@
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Header } from "./components/Header";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ResumeImport } from "./components/ResumeImport";
-import { JobDescription } from "./components/JobDescription";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { ResumeBuilder } from "./components/ResumeBuilder";
 import { ResumePreview } from "./components/ResumePreview";
-import { PdfPreview } from "./components/PdfPreview";
+import { ImportEditWorkspace } from "./components/ImportEditWorkspace";
 import { ToastContainer } from "./components/Toast";
 import { useEditorStore } from "./store/useEditorStore";
 import { useResumeStore } from "./store/useResumeStore";
 import { cn } from "./lib/utils";
 import { FileUp, Hammer } from "lucide-react";
+
+const PdfPreview = lazy(async () => {
+  const module = await import("./components/PdfPreview");
+  return { default: module.PdfPreview };
+});
 
 function App() {
   const { t } = useTranslation();
@@ -20,6 +25,25 @@ function App() {
 
   const showPdfPreview =
     activeTab === "import" && importedFileType === "pdf" && editorMode === "preview";
+  const showImportEditor =
+    activeTab === "import" && importedFileType !== null && editorMode === "editing";
+
+  const importPrimaryPane = showPdfPreview ? (
+    <Suspense
+      fallback={
+        <div
+          data-testid="pdf-preview-loading"
+          className="h-full rounded-2xl border border-border bg-background"
+        />
+      }
+    >
+      <PdfPreview />
+    </Suspense>
+  ) : showImportEditor ? (
+    <ImportEditWorkspace />
+  ) : (
+    <ResumeImport />
+  );
 
   return (
     <ErrorBoundary>
@@ -27,7 +51,7 @@ function App() {
         <Header />
 
         <main className="flex flex-1 overflow-hidden">
-          <section className="w-1/2 border-r border-border flex flex-col">
+          <section className="w-1/2 border-r border-border flex flex-col min-w-0">
             <nav
               className="flex border-b border-border sticky top-0 bg-background z-10"
               role="tablist"
@@ -62,15 +86,9 @@ function App() {
               </button>
             </nav>
 
-            <div className="flex-1 overflow-y-auto" role="tabpanel">
+            <div className="flex-1 min-h-0 overflow-y-auto" role="tabpanel">
               {activeTab === "import" ? (
-                <div className="flex flex-col gap-8 p-6">
-                  <ResumeImport />
-                  <div className="border-t border-border" />
-                  <JobDescription />
-                </div>
-              ) : showPdfPreview ? (
-                <PdfPreview />
+                <div className="h-full p-6">{importPrimaryPane}</div>
               ) : (
                 <ResumeBuilder />
               )}
@@ -82,7 +100,9 @@ function App() {
               <ResumePreview />
             ) : (
               <div className="p-6">
-                <AnalysisPanel />
+                <div className="rounded-2xl border border-border bg-background p-5">
+                  <AnalysisPanel />
+                </div>
               </div>
             )}
           </section>

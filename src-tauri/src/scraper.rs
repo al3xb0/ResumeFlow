@@ -1,6 +1,9 @@
 use std::sync::LazyLock;
 
 use scraper::{Html, Selector};
+use tracing::debug;
+
+use crate::error::AppError;
 
 static RE_SPACES: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new(r"[ \t]+").unwrap());
 static RE_NEWLINES: LazyLock<regex::Regex> =
@@ -30,39 +33,52 @@ const MAIN_SELECTORS: &[&str] = &[
     ".vacancy-description",
 ];
 
-pub async fn fetch_page_text(url: &str) -> Result<String, String> {
+pub async fn fetch_page_text(url: &str) -> Result<String, AppError> {
     if !url.starts_with("http://") && !url.starts_with("https://") {
-        return Err("URL must start with http:// or https://".to_string());
+        return Err(AppError::InvalidUrl);
     }
+
+    debug!(
+        operation = "fetch_job_url",
+        uses_https = url.starts_with("https://"),
+        "Fetching job description from URL"
+    );
 
     let client = reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT_SECS))
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+        .map_err(|error| AppError::HttpClient {
+            details: error.to_string(),
+        })?;
 
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch URL: {}", e))?;
+    let response = client.get(url).send().await.map_err(|error| {
+        if error.is_timeout() {
+            AppError::RequestTimeout
+        } else {
+            AppError::HttpRequestFailed {
+                details: error.to_string(),
+            }
+        }
+    })?;
 
     if !response.status().is_success() {
-        return Err(format!("HTTP error: {}", response.status()));
+        return Err(AppError::HttpStatus {
+            status: response.status().as_u16(),
+        });
     }
 
     let html_text = response
         .text()
         .await
-        .map_err(|e| format!("Failed to read response: {}", e))?;
+        .map_err(|error| AppError::ResponseReadFailed {
+            details: error.to_string(),
+        })?;
 
     let text = extract_text_from_html(&html_text);
 
     if text.trim().is_empty() {
-        return Err(
-            "Could not extract text from the page. The page may require JavaScript to load."
-                .to_string(),
-        );
+        return Err(AppError::PageTextUnavailable);
     }
 
     Ok(text)

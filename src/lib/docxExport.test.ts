@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildDocxDocument, generateDocxBlob } from "./docxExport";
 import type { ResumeData } from "../types/resume";
-import { defaultResumeData } from "../types/resume";
+import { defaultResumeData, DEFAULT_LAYOUT_SETTINGS } from "../types/resume";
 import { Document } from "docx";
 
 beforeEach(() => {
@@ -21,6 +21,70 @@ describe("buildDocxDocument", () => {
     const data = makeData();
     const doc = buildDocxDocument(data, allVisibleIds(data));
     expect(doc).toBeInstanceOf(Document);
+  });
+
+  it("uses template-specific DOCX font families", () => {
+    const classic = JSON.stringify(buildDocxDocument(makeData(), allVisibleIds(makeData())));
+    const minimal = JSON.stringify(
+      buildDocxDocument(makeData(), allVisibleIds(makeData()), undefined, "minimal"),
+    );
+
+    expect(classic).toContain("Segoe UI");
+    expect(minimal).toContain("Georgia");
+  });
+
+  it("maps asymmetric margins and role typography overrides into DOCX", () => {
+    const data = makeData({
+      personal: {
+        fullName: "Jane Layout",
+        title: "Designer",
+        email: "",
+        phone: "",
+        location: "",
+        links: [],
+      },
+    });
+
+    const doc = buildDocxDocument(data, allVisibleIds(data), undefined, "classic", {
+      ...DEFAULT_LAYOUT_SETTINGS,
+      pageMarginTopPx: 48,
+      pageMarginRightPx: 54,
+      pageMarginBottomPx: 60,
+      pageMarginLeftPx: 66,
+      typography: {
+        ...DEFAULT_LAYOUT_SETTINGS.typography,
+        name: { fontFamily: "Arial", fontSizePx: 28, fontWeight: 700, fontStyle: "normal" },
+        body: { fontFamily: "Calibri", fontSizePx: 14, fontWeight: 400, fontStyle: "normal" },
+      },
+    });
+    const json = JSON.stringify(doc);
+
+    expect(json).toContain('"top":{"key":"w:top","value":720}');
+    expect(json).toContain('"right":{"key":"w:right","value":810}');
+    expect(json).toContain('"bottom":{"key":"w:bottom","value":900}');
+    expect(json).toContain('"left":{"key":"w:left","value":990}');
+    expect(json).toContain("Arial");
+    expect(json).toContain("Calibri");
+  });
+
+  it("applies modern template accents in DOCX", () => {
+    const data = makeData({
+      personal: {
+        fullName: "Jane Modern",
+        title: "Engineer",
+        email: "jane@example.com",
+        phone: "555-1234",
+        location: "Warsaw",
+        links: [],
+      },
+      skills: [{ id: "s1", name: "Frontend", items: ["React", "TypeScript"] }],
+    });
+    const doc = buildDocxDocument(data, allVisibleIds(data), undefined, "modern");
+    const json = JSON.stringify(doc);
+
+    expect(json).toContain("1E293B");
+    expect(json).toContain("3B82F6");
+    expect(json).toContain("EFF6FF");
   });
 
   it("includes name paragraph when provided", () => {
@@ -235,7 +299,7 @@ describe("buildDocxDocument", () => {
     visibleIds.add(sectionId);
     const doc = buildDocxDocument(data, visibleIds);
     const json = JSON.stringify(doc);
-    expect(json).toContain("AWARDS");
+    expect(json).toContain("Awards");
     expect(json).toContain("Innovator Award");
   });
 });

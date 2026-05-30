@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createId, defaultResumeData } from "./resume";
+import { createId, defaultResumeData, normalizeResumeData } from "./resume";
 
 beforeEach(() => {
   vi.stubGlobal("crypto", { randomUUID: vi.fn(() => "mocked-uuid") });
@@ -94,5 +94,52 @@ describe("defaultResumeData", () => {
     expect(a).not.toBe(b);
     a.personal.fullName = "Changed";
     expect(b.personal.fullName).toBe("");
+  });
+});
+
+describe("normalizeResumeData", () => {
+  it("restores canonical builder defaults when optional slices are missing", () => {
+    const normalized = normalizeResumeData({
+      personal: { fullName: " Imported User " },
+      skills: [],
+    } as unknown as ReturnType<typeof defaultResumeData>);
+
+    expect(normalized.personal.fullName).toBe("Imported User");
+    expect(normalized.personal.links).toEqual([]);
+    expect(normalized.skills).toHaveLength(1);
+    expect(normalized.sections.map((section) => section.id)).toEqual(
+      expect.arrayContaining([
+        "personal",
+        "summary",
+        "experience",
+        "education",
+        "skills",
+        "languages",
+        "certifications",
+        "projects",
+        "volunteer",
+      ]),
+    );
+  });
+
+  it("normalizes malformed imported entries and preserves custom sections", () => {
+    const normalized = normalizeResumeData({
+      personal: {
+        fullName: "Jane",
+        links: [{ url: "example.com", type: "portfolio" }],
+      },
+      experience: [{ position: "Engineer", bullets: [] }],
+      sections: [{ id: "custom-awards", type: "custom", title: "Awards", visible: true }],
+      customSections: {
+        "custom-awards": [{ title: "Winner" }],
+      },
+    } as unknown as ReturnType<typeof defaultResumeData>);
+
+    expect(normalized.personal.links[0].id).toBe("mocked-uuid");
+    expect(normalized.experience[0].bullets).toEqual([""]);
+    expect(normalized.sections.find((section) => section.id === "custom-awards")?.title).toBe(
+      "Awards",
+    );
+    expect(normalized.customSections["custom-awards"][0].title).toBe("Winner");
   });
 });

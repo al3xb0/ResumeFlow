@@ -9,6 +9,7 @@ import { useBuilderStore } from "../store/useBuilderStore";
 import { useToast } from "../components/Toast";
 import { base64ToUint8 } from "../lib/utils";
 import { parseResumeText, mergeExtractedLinks } from "../lib/resumeParser";
+import { getTauriErrorMessage } from "../lib/tauriError";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -24,7 +25,7 @@ export function useResumeImport() {
     setIsExtracting,
     setPdfLinks,
   } = useResumeStore();
-  const { setEditorMode, setDocumentHtml, setActiveTab } = useEditorStore();
+  const { setEditorMode, setDocumentHtml, clearEditor } = useEditorStore();
   const { setResumeData } = useBuilderStore();
 
   const handleFileSelect = useCallback(async () => {
@@ -83,7 +84,6 @@ export function useResumeImport() {
             ),
           );
           setEditorMode("editing");
-          setActiveTab("editor");
           toast.success(t("import.docxImported"));
         } else {
           setImportedFileType("pdf");
@@ -106,11 +106,12 @@ export function useResumeImport() {
         }
       } catch (err) {
         console.error("File extraction error:", err);
+        clearEditor();
         setResumeText("");
         setResumeFileName(null);
         setImportedFilePath(null);
         setImportedFileType(null);
-        toast.error(t("import.extractionError"));
+        toast.error(getTauriErrorMessage(err, t, "import.extractionError"));
       } finally {
         setIsExtracting(false);
       }
@@ -128,16 +129,17 @@ export function useResumeImport() {
     setImportedFileType,
     setEditorMode,
     setDocumentHtml,
-    setActiveTab,
+    clearEditor,
     setResumeData,
   ]);
 
   const handleClearText = useCallback(() => {
+    clearEditor();
     setResumeText("");
     setResumeFileName(null);
     setImportedFilePath(null);
     setImportedFileType(null);
-  }, [setResumeText, setResumeFileName, setImportedFilePath, setImportedFileType]);
+  }, [clearEditor, setResumeText, setResumeFileName, setImportedFilePath, setImportedFileType]);
 
   return { handleFileSelect, handleClearText };
 }

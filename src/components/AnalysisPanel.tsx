@@ -3,14 +3,18 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { BarChart3, CheckCircle, XCircle, Loader2, Search } from "lucide-react";
 import { useResumeStore, type AnalysisResult } from "../store/useResumeStore";
+import { useEditorStore } from "../store/useEditorStore";
 import { useToast } from "./Toast";
+import { getTauriErrorMessage } from "../lib/tauriError";
 import { cn } from "../lib/utils";
 import { ReadabilityPanel } from "./ReadabilityPanel";
 import { ActionVerbLinter } from "./ActionVerbLinter";
+import { JobDescription } from "./JobDescription";
 
 export function AnalysisPanel() {
   const { t } = useTranslation();
   const toast = useToast();
+  const { activeTab } = useEditorStore();
   const {
     resumeText,
     jobDescription,
@@ -36,14 +40,15 @@ export function AnalysisPanel() {
       setAnalysisResult(result);
     } catch (err) {
       console.error("Analysis error:", err);
-      toast.error(String(err));
+      toast.error(getTauriErrorMessage(err, t, "errors.unknown"));
     } finally {
       setIsAnalyzing(false);
     }
   }, [canAnalyze, resumeText, jobDescription, toast, setAnalysisResult, setIsAnalyzing]);
 
   useEffect(() => {
-    if (!canAnalyze) {
+    if (!canAnalyze || activeTab !== "import") {
+      if (activeTab !== "import") return;
       if (analysisResult) setAnalysisResult(null);
       return;
     }
@@ -57,7 +62,7 @@ export function AnalysisPanel() {
       if (analyzeRef.current) clearTimeout(analyzeRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeText, jobDescription]);
+  }, [resumeText, jobDescription, activeTab]);
 
   const handleAnalyze = useCallback(async () => {
     await runAnalysis();
@@ -81,7 +86,11 @@ export function AnalysisPanel() {
 
       <div className="h-px bg-border" />
 
-      <div className="flex flex-col gap-4 flex-1">
+      <div>
+        <JobDescription />
+      </div>
+
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-foreground">{t("analysis.title")}</h2>
           <button

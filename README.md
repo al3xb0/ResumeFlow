@@ -26,24 +26,26 @@ You drop in your resume (PDF or plain text), paste a job description (or grab it
 
 ## Features
 
-| Feature                   | Description                                                                |
-| ------------------------- | -------------------------------------------------------------------------- |
-| **Resume import**         | Upload PDF or DOCX, or paste text directly                                 |
-| **Job description input** | Paste text or fetch from any URL                                           |
-| **Block editor**          | Section-based resume editor with drag-and-drop & keyboard reorder          |
-| **Resume builder**        | Full WYSIWYG builder with 3 templates (Classic, Modern, Minimal)           |
-| **PDF / DOCX export**     | Export from builder to PDF or DOCX with i18n-aware labels                  |
-| **Keyword matching**      | Dictionary-based analysis of 150+ tech skills, frameworks, and tools       |
-| **Match score**           | Weighted percentage showing how well your resume fits the job              |
-| **Action verb linter**    | Detects weak verbs ("worked", "helped") and suggests stronger alternatives |
-| **Readability check**     | Detects broken PDF extraction, missing sections, garbled text, word count  |
-| **PDF link extraction**   | Clickable hyperlinks preserved from the original PDF                       |
-| **Live preview**          | Resume preview with zoom controls (persisted to localStorage)              |
-| **Accessibility**         | ARIA roles, keyboard navigation, screen-reader support                     |
-| **Dark theme**            | Easy on the eyes, always                                                   |
-| **i18n**                  | English, Russian, Polish — all strings translated including exports        |
-| **Error boundary**        | Graceful crash recovery without losing app state                           |
-| **Security**              | DOMPurify sanitization, file size validation, no unsafe innerHTML          |
+| Feature                   | Description                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| **Resume import**         | Upload PDF or DOCX, or paste text directly, then hydrate the builder safely          |
+| **Job description input** | Paste text or fetch from any URL                                                     |
+| **Block editor**          | Section-based resume editor with drag-and-drop & keyboard reorder                    |
+| **Resume builder**        | Full WYSIWYG builder with 3 templates (Classic, Modern, Minimal)                     |
+| **PDF export**            | Typst-generated PDF export from the same render request as the live preview          |
+| **DOCX export**           | Best-effort DOCX export that keeps key template styling                              |
+| **Field-level layout**    | Per-field typography plus per-field margin/padding controls beside each editor field |
+| **Keyword matching**      | Dictionary-based analysis of 150+ tech skills, frameworks, and tools                 |
+| **Match score**           | Weighted percentage showing how well your resume fits the job                        |
+| **Action verb linter**    | Detects weak verbs ("worked", "helped") and suggests stronger alternatives           |
+| **Readability check**     | Detects broken PDF extraction, missing sections, garbled text, word count            |
+| **PDF link extraction**   | Clickable hyperlinks preserved from the original PDF                                 |
+| **Live preview**          | Resume preview with zoom controls (persisted to localStorage)                        |
+| **Accessibility**         | ARIA roles, keyboard navigation, screen-reader support                               |
+| **Dark theme**            | Easy on the eyes, always                                                             |
+| **i18n**                  | English, Russian, Polish — all strings translated including exports                  |
+| **Error boundary**        | Graceful crash recovery without losing app state                                     |
+| **Security**              | DOMPurify sanitization, file size validation, no unsafe innerHTML                    |
 
 ## Download
 
@@ -53,23 +55,23 @@ Builds are published automatically via GitHub Actions for **Windows**, **macOS**
 
 ## Tech stack
 
-| Layer             | Technology                                                   |
-| ----------------- | ------------------------------------------------------------ |
-| Desktop framework | [Tauri 2](https://v2.tauri.app)                              |
-| Frontend          | React 19, TypeScript 5.9, Tailwind CSS 4                     |
-| State management  | Zustand 5                                                    |
-| PDF export        | pdfmake 0.3                                                  |
-| DOCX export       | docx 9.6                                                     |
-| Backend           | Rust — pdf-extract, regex, reqwest, scraper                  |
-| i18n              | react-i18next (EN, RU, PL)                                   |
-| Testing           | Vitest + React Testing Library (frontend), cargo test (Rust) |
-| Linting           | ESLint 10 + Prettier 3                                       |
+| Layer              | Technology                                                   |
+| -----------------= | ------------------------------------------------------------ |
+| Desktop framework  | [Tauri 2](https://v2.tauri.app)                              |
+| Frontend           | React 19, TypeScript 5.9, Tailwind CSS 4                     |
+| State management   | Zustand 5                                                    |
+| Preview/PDF export | Typst renderer in Rust + Tauri commands                      |
+| DOCX export        | docx 9.6                                                     |
+| Backend            | Rust — pdf-extract, reqwest, scraper, Typst                  |
+| i18n               | react-i18next (EN, RU, PL)                                   |
+| Testing            | Vitest + React Testing Library (frontend), cargo test (Rust) |
+| Linting            | ESLint 10 + Prettier 3                                       |
 
 ## Build from source
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+
+- [Node.js](https://nodejs.org/) 20+
 - [Rust](https://www.rust-lang.org/tools/install) 1.80+
 - [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS
 
@@ -96,7 +98,9 @@ The installer will appear in `src-tauri/target/release/bundle/`.
 # Frontend tests
 npm test
 
-# Rust tests
+# Rust CI checks
+cd src-tauri && cargo fmt --check
+cd src-tauri && cargo clippy -- -D warnings
 cd src-tauri && cargo test
 
 # Full check (lint + format + types + tests)
@@ -105,16 +109,16 @@ npm run check
 
 ### Available scripts
 
-| Script                 | Description                                   |
-| ---------------------- | --------------------------------------------- |
-| `npm run dev`          | Start Vite dev server                         |
-| `npm run build`        | Typecheck + Vite production build             |
-| `npm run lint`         | ESLint check                                  |
-| `npm run lint:fix`     | ESLint auto-fix                               |
-| `npm run format`       | Prettier auto-format                          |
-| `npm run format:check` | Prettier check                                |
-| `npm test`             | Run Vitest tests                              |
-| `npm run check`        | Full CI check (lint + format + types + tests) |
+| Script                    | Description                                                             |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`             | Start Vite dev server                                                   |
+| `npm run build`           | Typecheck + Vite production build                                       |
+| `npm run lint`            | ESLint check                                                            |
+| `npm run lint:fix`        | ESLint auto-fix                                                         |
+| `npm run format`          | Prettier auto-format                                                    |
+| `npm run format:check`    | Prettier check                                                          |
+| `npm test`                | Run Vitest tests                                                        |
+| `npm run check`           | Full CI check (lint + format + types + tests)                           |
 
 ## Project structure
 
@@ -123,27 +127,37 @@ npm run check
 │   ├── components/             # UI components
 │   ├── hooks/                  # Custom React hooks
 │   ├── store/                  # Zustand stores (resume, editor, builder, toast)
-│   ├── lib/                    # Utilities, export functions, parsers
-│   ├── templates/              # Resume template renderers (3 templates)
+│   ├── lib/                    # Utilities, export helpers, render-request builders
+│   ├── templates/              # Shared template defaults and theme tokens
 │   ├── types/                  # TypeScript type definitions
 │   ├── i18n/                   # react-i18next setup & locale JSON files
 │   └── index.css               # Tailwind theme & CSS variables
 ├── src-tauri/                  # Rust backend
 │   └── src/
+│       ├── config.rs           # Runtime analysis config loading / validation
+│       ├── error.rs            # Structured app errors exposed to the frontend
 │       ├── lib.rs              # Tauri command handlers
 │       ├── parser.rs           # PDF text & hyperlink extraction
 │       ├── scraper.rs          # URL fetching & HTML parsing
 │       └── analysis/           # Analysis engine
 │           ├── mod.rs          # Re-exports & text normalization
-│           ├── constants.rs    # Tech keywords, sections, verb lists
 │           ├── keywords.rs     # Keyword matching & scoring
 │           ├── readability.rs  # Readability & structure checks
 │           └── verbs.rs        # Action verb linting
+├── src-tauri/resources/        # Bundled runtime analysis configuration JSON
 ├── .github/workflows/          # CI & release pipelines
 ├── eslint.config.js            # ESLint configuration
 ├── .prettierrc                 # Prettier configuration
 └── package.json
 ```
+
+## Export fidelity
+
+The builder preview is now the visual source of truth for PDF output:
+
+- The editor preview calls the same Rust Typst pipeline as PDF export, so preview pages and exported PDFs come from the same render request.
+- Layout customization now supports per-field typography plus per-field margin/padding overrides, edited directly next to the corresponding builder inputs.
+- DOCX export keeps template-aware typography and accents as a best-effort office-document export rather than a pixel-perfect Typst clone.
 
 ## Git branching model
 
