@@ -206,7 +206,9 @@ mod tests {
 
     #[test]
     fn test_invalid_url() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .unwrap();
         let result = rt.block_on(fetch_page_text("not-a-url"));
         assert!(result.is_err());
     }

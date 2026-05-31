@@ -22,6 +22,7 @@
     "extracting": "Extracting text...",
     "extracted": "Text extracted successfully",
     "extractionError": "Failed to extract text from the file",
+    "previewError": "Failed to load PDF preview",
     "fileTooLarge": "File is too large (max {{max}} MB)",
     "clear": "Clear",
     "linksFound": "{{count}} link(s) detected in PDF",

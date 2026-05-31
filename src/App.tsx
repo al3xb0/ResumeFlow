@@ -3,20 +3,40 @@ import { useTranslation } from "react-i18next";
 import { Header } from "./components/Header";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ResumeImport } from "./components/ResumeImport";
-import { AnalysisPanel } from "./components/AnalysisPanel";
-import { ResumeBuilder } from "./components/ResumeBuilder";
-import { ResumePreview } from "./components/ResumePreview";
-import { ImportEditWorkspace } from "./components/ImportEditWorkspace";
 import { ToastContainer } from "./components/Toast";
 import { useEditorStore } from "./store/useEditorStore";
 import { useResumeStore } from "./store/useResumeStore";
 import { cn } from "./lib/utils";
 import { FileUp, Hammer } from "lucide-react";
 
+const AnalysisPanel = lazy(async () => {
+  const module = await import("./components/AnalysisPanel");
+  return { default: module.AnalysisPanel };
+});
+
+const ImportEditWorkspace = lazy(async () => {
+  const module = await import("./components/ImportEditWorkspace");
+  return { default: module.ImportEditWorkspace };
+});
+
 const PdfPreview = lazy(async () => {
   const module = await import("./components/PdfPreview");
   return { default: module.PdfPreview };
 });
+
+const ResumeBuilder = lazy(async () => {
+  const module = await import("./components/ResumeBuilder");
+  return { default: module.ResumeBuilder };
+});
+
+const ResumePreview = lazy(async () => {
+  const module = await import("./components/ResumePreview");
+  return { default: module.ResumePreview };
+});
+
+function PaneFallback({ testId }: { testId?: string }) {
+  return <div data-testid={testId} className="h-full bg-background" />;
+}
 
 function App() {
   const { t } = useTranslation();
@@ -40,7 +60,9 @@ function App() {
       <PdfPreview />
     </Suspense>
   ) : showImportEditor ? (
-    <ImportEditWorkspace />
+    <Suspense fallback={<PaneFallback testId="import-edit-workspace-loading" />}>
+      <ImportEditWorkspace />
+    </Suspense>
   ) : (
     <ResumeImport />
   );
@@ -90,18 +112,24 @@ function App() {
               {activeTab === "import" ? (
                 <div className="h-full p-6">{importPrimaryPane}</div>
               ) : (
-                <ResumeBuilder />
+                <Suspense fallback={<PaneFallback testId="resume-builder-loading" />}>
+                  <ResumeBuilder />
+                </Suspense>
               )}
             </div>
           </section>
 
           <section className="w-1/2 overflow-y-auto">
             {activeTab === "editor" ? (
-              <ResumePreview />
+              <Suspense fallback={<PaneFallback testId="resume-preview-loading" />}>
+                <ResumePreview />
+              </Suspense>
             ) : (
               <div className="p-6">
                 <div className="rounded-2xl border border-border bg-background p-5">
-                  <AnalysisPanel />
+                  <Suspense fallback={<PaneFallback testId="analysis-panel-loading" />}>
+                    <AnalysisPanel />
+                  </Suspense>
                 </div>
               </div>
             )}

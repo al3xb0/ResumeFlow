@@ -71,13 +71,13 @@ describe("App import workflow", () => {
     expect(screen.queryByTestId("resume-preview")).not.toBeInTheDocument();
   });
 
-  it("keeps parsed editing inside Import instead of switching to Builder", () => {
+  it("keeps parsed editing inside Import instead of switching to Builder", async () => {
     useEditorStore.setState({ activeTab: "import", editorMode: "editing" });
     useResumeStore.setState({ importedFileType: "pdf" });
 
     render(<App />);
 
-    expect(screen.getByTestId("import-edit-workspace")).toBeInTheDocument();
+    expect(await screen.findByTestId("import-edit-workspace")).toBeInTheDocument();
     expect(screen.getByTestId("analysis-panel")).toBeInTheDocument();
     expect(screen.queryByTestId("resume-builder")).not.toBeInTheDocument();
     expect(screen.queryByTestId("resume-preview")).not.toBeInTheDocument();

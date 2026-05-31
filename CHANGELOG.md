@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-05-31
+
+### Changed
+
+- Reduced startup bundle weight by lazy-loading non-default app surfaces (`ResumeBuilder`, `ResumePreview`, `ImportEditWorkspace`, `AnalysisPanel`)
+- Moved DOCX export generation code behind dynamic import to keep it out of the initial bundle path
+- Switched Vitest environment from `jsdom` to `happy-dom` to reduce test runtime overhead
+- Standardized package manager metadata in `package.json` (`npm@11.13.0`) for consistent local/CI installs
+- Tuned Rust release profile (`opt-level = "s"`, `lto = "thin"`, `codegen-units = 1`, `strip = true`) to reduce desktop binary size
+- Split `typst-as-lib` features by target OS so Windows builds avoid embedded font payload by default
+
+### Fixed
+
+- Updated app version metadata consistently across frontend and Tauri/Rust manifests for release `0.5.1`
+
 ## [0.5.0] - 2026-05-30
 
 ### Added

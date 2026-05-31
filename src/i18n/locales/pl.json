@@ -22,6 +22,7 @@
     "extracting": "Wyodrębnianie tekstu...",
     "extracted": "Tekst wyodrębniony pomyślnie",
     "extractionError": "Nie udało się wyodrębnić tekstu z pliku",
+    "previewError": "Nie udało się wczytać podglądu PDF",
     "fileTooLarge": "Plik jest zbyt duży (maks. {{max}} MB)",
     "clear": "Wyczyść",
     "linksFound": "Wykryto {{count}} link(ów) w PDF",

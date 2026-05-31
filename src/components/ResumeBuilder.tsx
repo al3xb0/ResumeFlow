@@ -8,7 +8,6 @@ import { useResumeStore } from "../store/useResumeStore";
 import { useToast } from "./Toast";
 import { SectionEditor } from "./SectionEditor";
 import { PageLayoutPanel } from "./layout/PageLayoutPanel";
-import { generateDocxBlob } from "../lib/docxExport";
 import { buildResumeRenderRequest } from "../lib/resumeRenderRequest";
 import { getTauriErrorMessage } from "../lib/tauriError";
 import { exportResumePdf } from "../lib/typstRender";
@@ -75,6 +74,7 @@ export function ResumeBuilder() {
         layoutSettings,
       });
       const visibleIds = new Set(renderRequest.visibleIds);
+      const { generateDocxBlob } = await import("../lib/docxExport");
       const blob = await generateDocxBlob(
         renderRequest.resume,
         visibleIds,

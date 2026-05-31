@@ -9,7 +9,7 @@ export default defineConfig(async () => ({
   clearScreen: false,
   test: {
     globals: true,
-    environment: "jsdom",
+    environment: "happy-dom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
@@ -35,6 +35,6 @@ export default defineConfig(async () => ({
     },
   },
   optimizeDeps: {
-    include: ["pdfjs-dist"],
+    include: ["pdfjs-dist", "pdfjs-dist/build/pdf.worker.min.mjs"],
   },
 }));
