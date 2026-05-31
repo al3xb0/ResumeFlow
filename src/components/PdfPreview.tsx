@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Document, Page, pdfjs } from "react-pdf";
 import { invoke } from "@tauri-apps/api/core";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,10 +20,7 @@ import { getTauriErrorMessage } from "../lib/tauriError";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export function PdfPreview() {
   const DEFAULT_SCALE = 0.9;
@@ -38,6 +36,7 @@ export function PdfPreview() {
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(DEFAULT_SCALE);
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
+  const [pdfRenderFailed, setPdfRenderFailed] = useState(false);
 
   const isLoading = !!importedFilePath && loadedPath !== importedFilePath;
 
@@ -47,6 +46,7 @@ export function PdfPreview() {
     invoke<string>("read_file_base64", { filePath: importedFilePath })
       .then((base64) => {
         if (!cancelled) {
+          setPdfRenderFailed(false);
           setPdfData(`data:application/pdf;base64,${base64}`);
           setLoadedPath(importedFilePath);
         }
@@ -54,7 +54,7 @@ export function PdfPreview() {
       .catch((err) => {
         if (!cancelled) {
           console.error("Failed to load PDF:", err);
-          toast.error(getTauriErrorMessage(err, t, "import.extractionError"));
+          toast.error(getTauriErrorMessage(err, t, "import.previewError"));
           setLoadedPath(importedFilePath);
         }
       });
@@ -75,9 +75,19 @@ export function PdfPreview() {
   }, [resumeText, setDocumentHtml, setEditorMode, toast, t]);
 
   const onDocumentLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
+    setPdfRenderFailed(false);
     setNumPages(n);
     setCurrentPage(1);
   }, []);
+
+  const onDocumentLoadError = useCallback(
+    (error: Error) => {
+      console.error("Failed to render PDF preview:", error);
+      setPdfRenderFailed(true);
+      toast.error(t("import.previewError"));
+    },
+    [toast, t],
+  );
 
   if (isLoading) {
     return (
@@ -92,6 +102,14 @@ export function PdfPreview() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
         <p className="text-sm text-muted-foreground">{t("editor.noPdfLoaded")}</p>
+      </div>
+    );
+  }
+
+  if (pdfRenderFailed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <p className="text-sm text-destructive">{t("import.previewError")}</p>
       </div>
     );
   }
@@ -166,13 +184,14 @@ export function PdfPreview() {
         <Document
           file={pdfData}
           onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
           loading={
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 size={16} className="animate-spin" />
               <span className="text-sm">{t("common.loading")}</span>
             </div>
           }
-          error={<p className="text-sm text-destructive">{t("import.extractionError")}</p>}
+          error={<p className="text-sm text-destructive">{t("import.previewError")}</p>}
         >
           <Page
             pageNumber={currentPage}
