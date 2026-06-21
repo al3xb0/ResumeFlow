@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-06-21
+
+### Changed
+
+- Offloaded Typst rendering to a dedicated long-lived worker thread and made the preview/PDF-export commands async, so multi-page PDF export no longer freezes the UI
+- Removed the write-only `documentHtml` store state and the now-dead HTML helper functions; DOCX link extraction keeps using a local sanitized-HTML variable
+
+### Fixed
+
+- Avoided a parser panic on `NaN` glyph coordinates from malformed PDFs
+- Normalized bullet glyphs and recovered word boundaries lost to non-breaking/fixed-width spaces and full-em intra-word gaps during PDF parsing
+- Made hyperlinks visually distinct (link color plus underline) in both the live preview and the exported PDF
+
+### Security
+
+- Sanitized imported DOCX HTML with DOMPurify before storing it or extracting links, closing a gap against the README/CHANGELOG security claim
+- Hardened the CSP by dropping `unsafe-inline` from `script-src` and the broad `https:` from `connect-src` (scraping runs in Rust, so the webview needs no outbound HTTPS)
+- Blocked SSRF in the URL scraper: the target URL is validated, loopback/private/link-local/CGNAT/unique-local addresses and `localhost`/`.local` hosts are rejected (IPv4 and IPv6), and every redirect hop is re-checked (max 3)
+- Validated file-command paths, rejecting empty, relative, or parent-traversing paths in `extract_pdf_*`, `read_file_base64`, `save_file_bytes`, and `get_file_size`
+
 ## [0.5.1] - 2026-05-31
 
 ### Changed
