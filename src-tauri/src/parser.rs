@@ -58,8 +58,11 @@ impl SmartTextOutput {
 
         self.chars.sort_by(|a, b| {
             a.y.partial_cmp(&b.y)
-                .unwrap()
-                .then(a.x.partial_cmp(&b.x).unwrap())
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then(
+                    a.x.partial_cmp(&b.x)
+                        .unwrap_or(std::cmp::Ordering::Equal),
+                )
         });
 
         let mut line_start = 0;
@@ -107,7 +110,7 @@ impl SmartTextOutput {
             return avg_fs * 0.25;
         }
 
-        gaps.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        gaps.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Find the largest jump in the sorted gaps — the natural boundary
         // between kerning-level adjustments and real word spaces.
@@ -134,6 +137,10 @@ impl SmartTextOutput {
         }
 
         let threshold = Self::compute_space_threshold(line);
+        let avg_fs: f64 = line.iter().map(|c| c.font_size).sum::<f64>() / line.len() as f64;
+        // A gap of a full em inside one word_id is never kerning or letter
+        // spacing — it is a real space the PDF failed to mark as a boundary.
+        let intra_word_space = avg_fs;
 
         // Count how many chars share each word_id
         let mut wid_counts: HashMap<u32, usize> = HashMap::new();
@@ -177,15 +184,15 @@ impl SmartTextOutput {
             match last_rendered {
                 None => out.push_str(&line[i].text),
                 Some(pi) => {
+                    let gap = line[i].x - line[pi].end_x;
                     if line[pi].word_id == line[i].word_id {
-                        out.push_str(&line[i].text);
-                    } else {
-                        let gap = line[i].x - line[pi].end_x;
-                        if gap > threshold {
+                        if gap > intra_word_space {
                             out.push(' ');
                         }
-                        out.push_str(&line[i].text);
+                    } else if gap > threshold {
+                        out.push(' ');
                     }
+                    out.push_str(&line[i].text);
                 }
             }
             last_rendered = Some(i);
@@ -389,10 +396,31 @@ fn clean_extracted_text(text: &str) -> String {
     let text = sanitize_invisible_chars(text);
     let text = merge_broken_words(&text);
     text.lines()
-        .map(|line| line.trim())
+        .map(|line| normalize_bullet_prefix(line.trim()))
         .filter(|line| !line.is_empty() && line.chars().count() > 1)
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+/// Collapse any run of leading bullet glyphs into a single canonical "• ".
+/// PDFs emit a wide variety of bullet characters (and sometimes duplicates
+/// like "• -"), which downstream parsing then doubles up with its own marker.
+fn normalize_bullet_prefix(line: &str) -> String {
+    static RE_LEADING_BULLETS: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"^\s*(?:[•●○◦‣⁃▪▫■∙·*]\s*|[–—\-]\s+)+").unwrap()
+    });
+
+    match RE_LEADING_BULLETS.find(line) {
+        Some(m) => {
+            let remainder = line[m.end()..].trim_start();
+            if remainder.is_empty() {
+                String::new()
+            } else {
+                format!("• {remainder}")
+            }
+        }
+        None => line.to_string(),
+    }
 }
 
 fn merge_broken_words(text: &str) -> String {
@@ -426,10 +454,15 @@ fn sanitize_invisible_chars(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for c in text.chars() {
         match c {
+            // Non-breaking / fixed-width spaces glue words together — turn
+            // them into regular spaces so word boundaries are recovered.
+            '\u{00A0}' | '\u{2007}' | '\u{2008}' | '\u{2009}' | '\u{200A}' | '\u{202F}' => {
+                out.push(' ')
+            }
             // Separators → space
             '\u{200B}' | '\u{200C}' => out.push(' '),
             // Non-separators → strip
-            '\u{200D}' | '\u{FEFF}' | '\u{00AD}' | '\u{200E}' | '\u{200F}' => {}
+            '\u{200D}' | '\u{FEFF}' | '\u{00AD}' | '\u{200E}' | '\u{200F}' | '\u{2060}' => {}
             // Ligatures → decompose
             '\u{FB00}' => out.push_str("ff"),
             '\u{FB01}' => out.push_str("fi"),
@@ -794,6 +827,53 @@ mod tests {
         let input = "Hello World\nE\nq\n•\n.\nReal content here";
         let cleaned = clean_extracted_text(input);
         assert_eq!(cleaned, "Hello World\nReal content here");
+    }
+
+    #[test]
+    fn test_bullet_prefix_canonicalized() {
+        // Non-standard bullet glyphs collapse to a single canonical marker
+        let input = "◦ Did a thing\n‣ Did another\n• Already fine";
+        let cleaned = clean_extracted_text(input);
+        assert_eq!(cleaned, "• Did a thing\n• Did another\n• Already fine");
+    }
+
+    #[test]
+    fn test_duplicate_bullets_collapsed() {
+        let input = "• - Built the API\n*  Shipped it";
+        let cleaned = clean_extracted_text(input);
+        assert_eq!(cleaned, "• Built the API\n• Shipped it");
+    }
+
+    #[test]
+    fn test_empty_bullet_line_dropped() {
+        let input = "Real line\n•\nAnother line";
+        let cleaned = clean_extracted_text(input);
+        assert_eq!(cleaned, "Real line\nAnother line");
+    }
+
+    #[test]
+    fn test_leading_hyphen_number_preserved() {
+        // "-5%" is data, not a bullet, so it must survive untouched
+        assert_eq!(normalize_bullet_prefix("-5% churn"), "-5% churn");
+    }
+
+    #[test]
+    fn test_nbsp_becomes_space() {
+        let input = "React\u{00A0}and\u{202F}TypeScript";
+        let cleaned = sanitize_invisible_chars(input);
+        assert_eq!(cleaned, "React and TypeScript");
+    }
+
+    #[test]
+    fn test_huge_intra_word_gap_splits() {
+        // Same word_id but a full-em gap is a real (unmarked) space
+        let chars: Vec<CharInfo> = vec![
+            CharInfo { x: 0.0, y: 10.0, end_x: 24.0, font_size: 12.0, text: "Lead".into(), word_id: 1 },
+            CharInfo { x: 60.0, y: 10.0, end_x: 84.0, font_size: 12.0, text: "2024".into(), word_id: 1 },
+        ];
+        let mut result = String::new();
+        SmartTextOutput::render_line_into(&chars, &mut result);
+        assert_eq!(result, "Lead 2024");
     }
 
     #[test]

@@ -30,7 +30,7 @@ const URL_RE = /https?:\/\/[^\s]+/gi;
 const DATE_RANGE_RE =
   /(\w+\.?\s*\d{4})\s*[-–—]\s*(\w+\.?\s*\d{4}|present|current|now|настоящее|текущее)/i;
 const SINGLE_DATE_RE = /\b(\w+\.?\s*\d{4})\b/;
-const BULLET_RE = /^[\s]*[•●\-–—*▪▸►]\s*/;
+const BULLET_RE = /^[\s]*[•●○◦‣⁃▪▫■▸►∙·*–—]\s*|^[\s]*[-]\s+/;
 
 interface TextSection {
   type: string;

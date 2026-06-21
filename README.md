@@ -56,12 +56,12 @@ Builds are published automatically via GitHub Actions for **Windows**, **macOS**
 ## Tech stack
 
 | Layer              | Technology                                                   |
-| -----------------= | ------------------------------------------------------------ |
+| ------------------ | ------------------------------------------------------------ |
 | Desktop framework  | [Tauri 2](https://v2.tauri.app)                              |
-| Frontend           | React 19, TypeScript 5.9, Tailwind CSS 4                     |
+| Frontend           | React 19, TypeScript 6.0, Tailwind CSS 4                     |
 | State management   | Zustand 5                                                    |
 | Preview/PDF export | Typst renderer in Rust + Tauri commands                      |
-| DOCX export        | docx 9.6                                                     |
+| DOCX export        | docx 9.7                                                     |
 | Backend            | Rust — pdf-extract, reqwest, scraper, Typst                  |
 | i18n               | react-i18next (EN, RU, PL)                                   |
 | Testing            | Vitest + React Testing Library (frontend), cargo test (Rust) |

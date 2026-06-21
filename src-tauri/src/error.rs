@@ -27,6 +27,8 @@ pub enum AppError {
     },
     #[error("the selected file format is not supported")]
     UnsupportedFileFormat { expected: &'static str },
+    #[error("the file path is not allowed")]
+    InvalidPath { path: String },
     #[error("the PDF could not be opened")]
     PdfOpen { details: String },
     #[error("the PDF text could not be extracted")]
@@ -35,6 +37,8 @@ pub enum AppError {
     PdfNoText,
     #[error("the URL is invalid")]
     InvalidUrl,
+    #[error("the URL points to a blocked address")]
+    BlockedAddress,
     #[error("the HTTP client could not be created")]
     HttpClient { details: String },
     #[error("the request timed out")]
@@ -90,10 +94,12 @@ impl AppError {
             Self::FileWrite { .. } => "file_write_failed",
             Self::InvalidBase64 { .. } => "invalid_base64",
             Self::UnsupportedFileFormat { .. } => "unsupported_file_format",
+            Self::InvalidPath { .. } => "invalid_path",
             Self::PdfOpen { .. } => "pdf_open_failed",
             Self::PdfTextExtract { .. } => "pdf_text_extract_failed",
             Self::PdfNoText => "pdf_no_text",
             Self::InvalidUrl => "invalid_url",
+            Self::BlockedAddress => "blocked_address",
             Self::HttpClient { .. } => "http_client_error",
             Self::RequestTimeout => "network_timeout",
             Self::HttpRequestFailed { .. } => "http_request_failed",
@@ -112,6 +118,7 @@ impl AppError {
             Self::FileRead { .. } => "The selected file could not be read.",
             Self::FileWrite { .. } => "The selected file could not be saved.",
             Self::InvalidBase64 { .. } => "The file data is not valid.",
+            Self::InvalidPath { .. } => "The selected file path is not allowed.",
             Self::UnsupportedFileFormat { expected } => match *expected {
                 "pdf" => "Only PDF files are supported here.",
                 _ => "The selected file format is not supported.",
@@ -122,6 +129,9 @@ impl AppError {
                 "The PDF appears to have no extractable text. It may be a scanned document."
             }
             Self::InvalidUrl => "Enter a valid http:// or https:// URL.",
+            Self::BlockedAddress => {
+                "This URL points to a private or local address and was blocked."
+            }
             Self::HttpClient { .. } => "The network request could not be started.",
             Self::RequestTimeout => "The request timed out. Please try again.",
             Self::HttpRequestFailed { .. } => "The page could not be fetched.",
