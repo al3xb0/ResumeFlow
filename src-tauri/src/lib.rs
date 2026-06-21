@@ -225,7 +225,7 @@ fn get_file_size(file_path: String) -> Result<u64, AppErrorPayload> {
 }
 
 #[tauri::command]
-fn render_resume_preview(
+async fn render_resume_preview(
     request: ResumePreviewRenderRequest,
 ) -> Result<ResumePreviewRenderResponse, AppErrorPayload> {
     debug!(
@@ -237,11 +237,12 @@ fn render_resume_preview(
     );
 
     render::render_resume_preview(request)
+        .await
         .map_err(|error| map_command_error("render_resume_preview", error))
 }
 
 #[tauri::command]
-fn export_resume_pdf(
+async fn export_resume_pdf(
     request: ResumePdfRenderRequest,
 ) -> Result<ResumePdfRenderResponse, AppErrorPayload> {
     debug!(
@@ -251,7 +252,9 @@ fn export_resume_pdf(
         "Typst PDF export requested"
     );
 
-    render::export_resume_pdf(request).map_err(|error| map_command_error("export_resume_pdf", error))
+    render::export_resume_pdf(request)
+        .await
+        .map_err(|error| map_command_error("export_resume_pdf", error))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
