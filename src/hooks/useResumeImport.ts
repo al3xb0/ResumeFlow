@@ -25,7 +25,7 @@ export function useResumeImport() {
     setIsExtracting,
     setPdfLinks,
   } = useResumeStore();
-  const { setEditorMode, setDocumentHtml, clearEditor } = useEditorStore();
+  const { setEditorMode, clearEditor } = useEditorStore();
   const { setResumeData } = useBuilderStore();
 
   const handleFileSelect = useCallback(async () => {
@@ -66,7 +66,6 @@ export function useResumeImport() {
           const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer as ArrayBuffer });
           const DOMPurify = (await import("dompurify")).default;
           const safeHtml = DOMPurify.sanitize(result.value, { ADD_ATTR: ["target"] });
-          setDocumentHtml(safeHtml);
           const textResult = await mammoth.extractRawText({
             arrayBuffer: bytes.buffer as ArrayBuffer,
           });
@@ -130,7 +129,6 @@ export function useResumeImport() {
     setImportedFilePath,
     setImportedFileType,
     setEditorMode,
-    setDocumentHtml,
     clearEditor,
     setResumeData,
   ]);
