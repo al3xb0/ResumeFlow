@@ -2,6 +2,10 @@ use std::cell::RefCell;
 use std::collections::{hash_map::DefaultHasher, BTreeMap, HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+use std::sync::OnceLock;
+use std::thread;
+
+use tokio::sync::{mpsc, oneshot};
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder};
@@ -264,7 +268,7 @@ const CLASSIC_TEMPLATE: &str = r#"
   fill: rgb(layout.bodyColor),
 )
 
-#show link: set text(fill: rgb(layout.linkColor))
+#show link: it => text(fill: rgb(layout.linkColor), underline(offset: 1.5pt, it))
 
 #let styled_text(style, fill, body) = text(
     font: style.fonts,
@@ -340,7 +344,7 @@ const CLASSIC_TEMPLATE: &str = r#"
                     #if contact.url == none or contact.url == "" [
                         #contact_text[#contact.value]
                     ] else [
-                        #link(contact.url)[#contact_text[#contact.value]]
+                        #link(contact.url)[#styled_text(fields.personalContacts, layout.linkColor, contact.value)]
                     ]
                 ]
             ])
@@ -417,7 +421,7 @@ const CLASSIC_TEMPLATE: &str = r#"
           #if entry.url == none or entry.url == "" [
                         #field_block(spacing.certificationTitle, [#certification_title[#entry.title]])
           ] else [
-                        #field_block(spacing.certificationTitle, [#link(entry.url)[#certification_title[#entry.title]]])
+                        #field_block(spacing.certificationTitle, [#link(entry.url)[#styled_text(fields.certificationTitle, layout.linkColor, entry.title)]])
           ]
         ],
                 [#field_block(spacing.certificationMeta, [#certification_meta[#entry.meta]])],
@@ -434,7 +438,7 @@ const CLASSIC_TEMPLATE: &str = r#"
       #if entry.url == none or entry.url == "" [
                 #field_block(spacing.projectTitle, [#project_title[#entry.title]])
       ] else [
-                #field_block(spacing.projectTitle, [#link(entry.url)[#project_title[#entry.title]]])
+                #field_block(spacing.projectTitle, [#link(entry.url)[#styled_text(fields.projectTitle, layout.linkColor, entry.title)]])
       ]
             #if entry.subtitle != "" [
                 #field_block(spacing.projectSubtitle, [#project_subtitle[#entry.subtitle]])
@@ -881,7 +885,73 @@ struct TypstLayoutData {
     field_spacing: BTreeMap<String, TypstFieldSpacing>,
 }
 
-pub fn render_resume_preview(
+enum RenderJob {
+    Preview {
+        request: ResumePreviewRenderRequest,
+        respond: oneshot::Sender<Result<ResumePreviewRenderResponse, AppError>>,
+    },
+    Pdf {
+        request: ResumePdfRenderRequest,
+        respond: oneshot::Sender<Result<ResumePdfRenderResponse, AppError>>,
+    },
+}
+
+static RENDER_WORKER: OnceLock<mpsc::UnboundedSender<RenderJob>> = OnceLock::new();
+
+// Typst rendering relies on a thread-local cache holding non-Send state (the
+// engine and Rc<PagedDocument>). Pinning every job to one dedicated worker
+// thread keeps that cache hot while freeing the Tauri main thread, so the UI
+// never blocks on multi-page PDF export. Only Send request/response values
+// cross the channel; the non-Send cache stays on the worker thread.
+fn render_worker() -> &'static mpsc::UnboundedSender<RenderJob> {
+    RENDER_WORKER.get_or_init(|| {
+        let (sender, mut receiver) = mpsc::unbounded_channel::<RenderJob>();
+        thread::Builder::new()
+            .name("resume-render".to_string())
+            .spawn(move || {
+                while let Some(job) = receiver.blocking_recv() {
+                    match job {
+                        RenderJob::Preview { request, respond } => {
+                            let _ = respond.send(render_resume_preview_blocking(request));
+                        }
+                        RenderJob::Pdf { request, respond } => {
+                            let _ = respond.send(export_resume_pdf_blocking(request));
+                        }
+                    }
+                }
+            })
+            .expect("failed to spawn resume render worker thread");
+        sender
+    })
+}
+
+fn worker_unavailable() -> AppError {
+    AppError::ResumeRender {
+        details: "Render worker thread is unavailable".to_string(),
+    }
+}
+
+pub async fn render_resume_preview(
+    request: ResumePreviewRenderRequest,
+) -> Result<ResumePreviewRenderResponse, AppError> {
+    let (respond, response) = oneshot::channel();
+    render_worker()
+        .send(RenderJob::Preview { request, respond })
+        .map_err(|_| worker_unavailable())?;
+    response.await.map_err(|_| worker_unavailable())?
+}
+
+pub async fn export_resume_pdf(
+    request: ResumePdfRenderRequest,
+) -> Result<ResumePdfRenderResponse, AppError> {
+    let (respond, response) = oneshot::channel();
+    render_worker()
+        .send(RenderJob::Pdf { request, respond })
+        .map_err(|_| worker_unavailable())?;
+    response.await.map_err(|_| worker_unavailable())?
+}
+
+fn render_resume_preview_blocking(
     request: ResumePreviewRenderRequest,
 ) -> Result<ResumePreviewRenderResponse, AppError> {
     let preview_cache_key = build_preview_cache_key(&request)?;
@@ -923,7 +993,7 @@ pub fn render_resume_preview(
     Ok(response)
 }
 
-pub fn export_resume_pdf(
+fn export_resume_pdf_blocking(
     request: ResumePdfRenderRequest,
 ) -> Result<ResumePdfRenderResponse, AppError> {
     let document_cache_key = build_render_request_cache_key(&request.render_request)?;
@@ -1837,7 +1907,7 @@ mod tests {
     #[test]
     fn renders_preview_and_pdf_for_supported_templates() {
         for template in [CLASSIC_TEMPLATE_ID, MODERN_TEMPLATE_ID, MINIMAL_TEMPLATE_ID] {
-            let preview = render_resume_preview(ResumePreviewRenderRequest {
+            let preview = render_resume_preview_blocking(ResumePreviewRenderRequest {
                 render_request: sample_request(template),
                 dpi: Some(144),
                 page_indices: None,
@@ -1853,7 +1923,7 @@ mod tests {
                 "expected PNG bytes for {template}"
             );
 
-            let pdf = export_resume_pdf(ResumePdfRenderRequest {
+            let pdf = export_resume_pdf_blocking(ResumePdfRenderRequest {
                 render_request: sample_request(template),
             })
             .unwrap_or_else(|error| panic!("pdf should render for {template}: {error}"));

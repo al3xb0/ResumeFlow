@@ -26,7 +26,8 @@ static RE_LINKEDIN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)linkedin\.com/in/[\w\-]+").unwrap());
 static RE_GITHUB: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)github\.com/[\w\-]+").unwrap());
-static RE_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[\s]*[•\-\*▪◦‣⁃]\s*").unwrap());
+static RE_BULLET: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[\s]*[•●○◦‣⁃▪▫■▸►∙·*\-–—]\s+").unwrap());
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]

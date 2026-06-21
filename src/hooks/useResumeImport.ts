@@ -25,7 +25,7 @@ export function useResumeImport() {
     setIsExtracting,
     setPdfLinks,
   } = useResumeStore();
-  const { setEditorMode, setDocumentHtml, clearEditor } = useEditorStore();
+  const { setEditorMode, clearEditor } = useEditorStore();
   const { setResumeData } = useBuilderStore();
 
   const handleFileSelect = useCallback(async () => {
@@ -64,14 +64,15 @@ export function useResumeImport() {
           const bytes = base64ToUint8(base64);
           const mammoth = await import("mammoth");
           const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer as ArrayBuffer });
-          setDocumentHtml(result.value);
+          const DOMPurify = (await import("dompurify")).default;
+          const safeHtml = DOMPurify.sanitize(result.value, { ADD_ATTR: ["target"] });
           const textResult = await mammoth.extractRawText({
             arrayBuffer: bytes.buffer as ArrayBuffer,
           });
           setResumeText(textResult.value);
           const parsed = parseResumeText(textResult.value);
           const linkParser = document.createElement("div");
-          linkParser.innerHTML = result.value;
+          linkParser.innerHTML = safeHtml;
           const anchors = linkParser.querySelectorAll("a[href]");
           const extractedLinks: PdfLink[] = Array.from(anchors)
             .map((a) => ({ url: a.getAttribute("href") || "", page: 1 }))
@@ -128,7 +129,6 @@ export function useResumeImport() {
     setImportedFilePath,
     setImportedFileType,
     setEditorMode,
-    setDocumentHtml,
     clearEditor,
     setResumeData,
   ]);

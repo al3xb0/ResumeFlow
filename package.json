@@ -2,7 +2,7 @@
   "name": "resumeflow",
   "private": true,
   "packageManager": "npm@11.13.0",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,6 +24,7 @@
     "@tauri-apps/plugin-opener": "^2.5.4",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
+    "dompurify": "^3.4.11",
     "i18next": "^26.3.0",
     "lucide-react": "^1.17.0",
     "mammoth": "^1.12.0",

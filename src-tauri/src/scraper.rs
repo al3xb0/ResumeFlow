@@ -1,3 +1,4 @@
+use std::net::{IpAddr, ToSocketAddrs};
 use std::sync::LazyLock;
 
 use scraper::{Html, Selector};
@@ -12,6 +13,7 @@ static RE_NEWLINES: LazyLock<regex::Regex> =
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
                            (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const REQUEST_TIMEOUT_SECS: u64 = 15;
+const MAX_REDIRECTS: usize = 3;
 const MIN_MAIN_CONTENT_WORDS: usize = 30;
 
 const REMOVE_SELECTORS: &[&str] = &[
@@ -38,15 +40,29 @@ pub async fn fetch_page_text(url: &str) -> Result<String, AppError> {
         return Err(AppError::InvalidUrl);
     }
 
+    let parsed = reqwest::Url::parse(url).map_err(|_| AppError::InvalidUrl)?;
+    ensure_public_host(&parsed)?;
+
     debug!(
         operation = "fetch_job_url",
         uses_https = url.starts_with("https://"),
         "Fetching job description from URL"
     );
 
+    let redirect_policy = reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= MAX_REDIRECTS {
+            return attempt.stop();
+        }
+        if ensure_public_host(attempt.url()).is_err() {
+            return attempt.stop();
+        }
+        attempt.follow()
+    });
+
     let client = reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT_SECS))
+        .redirect(redirect_policy)
         .build()
         .map_err(|error| AppError::HttpClient {
             details: error.to_string(),
@@ -82,6 +98,61 @@ pub async fn fetch_page_text(url: &str) -> Result<String, AppError> {
     }
 
     Ok(text)
+}
+
+fn ensure_public_host(url: &reqwest::Url) -> Result<(), AppError> {
+    let host = url.host_str().ok_or(AppError::BlockedAddress)?;
+    let lowered = host.to_ascii_lowercase();
+    if lowered == "localhost" || lowered.ends_with(".localhost") || lowered.ends_with(".local") {
+        return Err(AppError::BlockedAddress);
+    }
+
+    let port = url.port_or_known_default().unwrap_or(80);
+    let resolved = (host, port)
+        .to_socket_addrs()
+        .map_err(|_| AppError::BlockedAddress)?;
+
+    let mut found = false;
+    for addr in resolved {
+        found = true;
+        if is_blocked_ip(&addr.ip()) {
+            return Err(AppError::BlockedAddress);
+        }
+    }
+
+    if found {
+        Ok(())
+    } else {
+        Err(AppError::BlockedAddress)
+    }
+}
+
+fn is_blocked_ip(ip: &IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => {
+            let octets = v4.octets();
+            v4.is_loopback()
+                || v4.is_private()
+                || v4.is_link_local()
+                || v4.is_broadcast()
+                || v4.is_unspecified()
+                || octets[0] == 0
+                // CGNAT shared address space 100.64.0.0/10
+                || (octets[0] == 100 && (64..=127).contains(&octets[1]))
+        }
+        IpAddr::V6(v6) => {
+            if let Some(mapped) = v6.to_ipv4_mapped() {
+                return is_blocked_ip(&IpAddr::V4(mapped));
+            }
+            let first = v6.segments()[0];
+            v6.is_loopback()
+                || v6.is_unspecified()
+                // unique local fc00::/7
+                || (first & 0xfe00) == 0xfc00
+                // link-local fe80::/10
+                || (first & 0xffc0) == 0xfe80
+        }
+    }
 }
 
 fn extract_text_from_html(html: &str) -> String {
@@ -211,5 +282,54 @@ mod tests {
             .unwrap();
         let result = rt.block_on(fetch_page_text("not-a-url"));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_blocks_private_ipv4() {
+        for ip in [
+            "127.0.0.1",
+            "10.0.0.5",
+            "192.168.1.1",
+            "172.16.0.1",
+            "169.254.169.254",
+            "0.0.0.0",
+            "100.64.0.1",
+        ] {
+            assert!(
+                is_blocked_ip(&ip.parse::<IpAddr>().unwrap()),
+                "{ip} should be blocked"
+            );
+        }
+    }
+
+    #[test]
+    fn test_allows_public_ipv4() {
+        for ip in ["8.8.8.8", "1.1.1.1", "93.184.216.34"] {
+            assert!(
+                !is_blocked_ip(&ip.parse::<IpAddr>().unwrap()),
+                "{ip} should be allowed"
+            );
+        }
+    }
+
+    #[test]
+    fn test_blocks_private_ipv6() {
+        for ip in ["::1", "fc00::1", "fe80::1", "::ffff:127.0.0.1"] {
+            assert!(
+                is_blocked_ip(&ip.parse::<IpAddr>().unwrap()),
+                "{ip} should be blocked"
+            );
+        }
+    }
+
+    #[test]
+    fn test_ensure_public_host_blocks_local_targets() {
+        for url in ["http://127.0.0.1/x", "http://localhost:8080/", "http://[::1]/"] {
+            let parsed = reqwest::Url::parse(url).unwrap();
+            assert!(
+                matches!(ensure_public_host(&parsed), Err(AppError::BlockedAddress)),
+                "{url} should be blocked"
+            );
+        }
     }
 }

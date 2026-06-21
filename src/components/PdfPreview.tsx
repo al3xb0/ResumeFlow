@@ -29,7 +29,7 @@ export function PdfPreview() {
   const { t } = useTranslation();
   const toast = useToast();
   const { importedFilePath, resumeText } = useResumeStore();
-  const { setEditorMode, setDocumentHtml } = useEditorStore();
+  const { setEditorMode } = useEditorStore();
 
   const [pdfData, setPdfData] = useState<string | null>(null);
   const [numPages, setNumPages] = useState(0);
@@ -68,11 +68,9 @@ export function PdfPreview() {
       toast.error(t("editor.noTextToConvert"));
       return;
     }
-    const html = textToBasicHtml(resumeText);
-    setDocumentHtml(html);
     setEditorMode("editing");
     toast.success(t("editor.convertedToEditable"));
-  }, [resumeText, setDocumentHtml, setEditorMode, toast, t]);
+  }, [resumeText, setEditorMode, toast, t]);
 
   const onDocumentLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
     setPdfRenderFailed(false);
@@ -204,28 +202,4 @@ export function PdfPreview() {
       </div>
     </div>
   );
-}
-
-function textToBasicHtml(text: string): string {
-  const sectionPattern =
-    /^(summary|about|objective|profile|experience|work|employment|professional|education|university|skills|technologies|tech stack|contact|header|projects|certifications|awards|publications|languages|interests|references)$/i;
-
-  return text
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return "";
-      if (sectionPattern.test(trimmed)) {
-        return `<h2>${escapeHtml(trimmed)}</h2>`;
-      }
-      if (trimmed.startsWith("• ") || trimmed.startsWith("- ")) {
-        return `<li>${escapeHtml(trimmed.slice(2))}</li>`;
-      }
-      return `<p>${escapeHtml(trimmed)}</p>`;
-    })
-    .join("");
-}
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
