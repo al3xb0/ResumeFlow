@@ -268,7 +268,7 @@ const CLASSIC_TEMPLATE: &str = r#"
   fill: rgb(layout.bodyColor),
 )
 
-#show link: set text(fill: rgb(layout.linkColor))
+#show link: it => text(fill: rgb(layout.linkColor), underline(offset: 1.5pt, it))
 
 #let styled_text(style, fill, body) = text(
     font: style.fonts,
@@ -344,7 +344,7 @@ const CLASSIC_TEMPLATE: &str = r#"
                     #if contact.url == none or contact.url == "" [
                         #contact_text[#contact.value]
                     ] else [
-                        #link(contact.url)[#contact_text[#contact.value]]
+                        #link(contact.url)[#styled_text(fields.personalContacts, layout.linkColor, contact.value)]
                     ]
                 ]
             ])
@@ -421,7 +421,7 @@ const CLASSIC_TEMPLATE: &str = r#"
           #if entry.url == none or entry.url == "" [
                         #field_block(spacing.certificationTitle, [#certification_title[#entry.title]])
           ] else [
-                        #field_block(spacing.certificationTitle, [#link(entry.url)[#certification_title[#entry.title]]])
+                        #field_block(spacing.certificationTitle, [#link(entry.url)[#styled_text(fields.certificationTitle, layout.linkColor, entry.title)]])
           ]
         ],
                 [#field_block(spacing.certificationMeta, [#certification_meta[#entry.meta]])],
@@ -438,7 +438,7 @@ const CLASSIC_TEMPLATE: &str = r#"
       #if entry.url == none or entry.url == "" [
                 #field_block(spacing.projectTitle, [#project_title[#entry.title]])
       ] else [
-                #field_block(spacing.projectTitle, [#link(entry.url)[#project_title[#entry.title]]])
+                #field_block(spacing.projectTitle, [#link(entry.url)[#styled_text(fields.projectTitle, layout.linkColor, entry.title)]])
       ]
             #if entry.subtitle != "" [
                 #field_block(spacing.projectSubtitle, [#project_subtitle[#entry.subtitle]])
