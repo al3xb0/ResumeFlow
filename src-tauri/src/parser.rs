@@ -58,8 +58,11 @@ impl SmartTextOutput {
 
         self.chars.sort_by(|a, b| {
             a.y.partial_cmp(&b.y)
-                .unwrap()
-                .then(a.x.partial_cmp(&b.x).unwrap())
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then(
+                    a.x.partial_cmp(&b.x)
+                        .unwrap_or(std::cmp::Ordering::Equal),
+                )
         });
 
         let mut line_start = 0;
@@ -107,7 +110,7 @@ impl SmartTextOutput {
             return avg_fs * 0.25;
         }
 
-        gaps.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        gaps.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Find the largest jump in the sorted gaps — the natural boundary
         // between kerning-level adjustments and real word spaces.
