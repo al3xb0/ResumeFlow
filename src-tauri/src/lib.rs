@@ -5,7 +5,7 @@ mod parser;
 mod render;
 mod scraper;
 
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 
 use analysis::{AnalysisResult, ReadabilityResult, VerbLintResult};
 use base64::{engine::general_purpose::STANDARD, Engine};
@@ -55,6 +55,29 @@ fn map_command_error(command: &'static str, error: AppError) -> AppErrorPayload 
     error.into()
 }
 
+// Reject paths that are empty, relative, or traverse parent directories.
+// File paths legitimately originate from the dialog plugin (always absolute);
+// this guard limits the blast radius if a compromised frontend forges them.
+fn ensure_safe_path(command: &'static str, file_path: &str) -> Result<(), AppErrorPayload> {
+    let path = Path::new(file_path);
+    let is_safe = !file_path.is_empty()
+        && path.is_absolute()
+        && !path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir));
+
+    if is_safe {
+        Ok(())
+    } else {
+        Err(map_command_error(
+            command,
+            AppError::InvalidPath {
+                path: file_path.to_string(),
+            },
+        ))
+    }
+}
+
 fn init_tracing() {
     let default_filter = if cfg!(debug_assertions) {
         "resumeflow=debug,tauri=warn"
@@ -74,6 +97,7 @@ fn init_tracing() {
 #[tauri::command]
 fn extract_pdf_text(file_path: String) -> Result<String, AppErrorPayload> {
     debug!(command = "extract_pdf_text", "Handling PDF text extraction");
+    ensure_safe_path("extract_pdf_text", &file_path)?;
     parser::extract_text_from_pdf(&file_path)
         .map_err(|error| map_command_error("extract_pdf_text", error))
 }
@@ -84,12 +108,14 @@ fn extract_pdf_links(file_path: String) -> Result<Vec<PdfLink>, AppErrorPayload>
         command = "extract_pdf_links",
         "Handling PDF link extraction"
     );
+    ensure_safe_path("extract_pdf_links", &file_path)?;
     parser::extract_links_from_pdf(&file_path)
         .map_err(|error| map_command_error("extract_pdf_links", error))
 }
 
 #[tauri::command]
 fn read_file_base64(file_path: String) -> Result<String, AppErrorPayload> {
+    ensure_safe_path("read_file_base64", &file_path)?;
     let bytes = std::fs::read(&file_path).map_err(|error| {
         map_command_error("read_file_base64", AppError::file_read(&file_path, error))
     })?;
@@ -98,6 +124,7 @@ fn read_file_base64(file_path: String) -> Result<String, AppErrorPayload> {
 
 #[tauri::command]
 fn save_file_bytes(file_path: String, base64_content: String) -> Result<(), AppErrorPayload> {
+    ensure_safe_path("save_file_bytes", &file_path)?;
     let bytes = STANDARD.decode(base64_content).map_err(|source| {
         map_command_error("save_file_bytes", AppError::InvalidBase64 { source })
     })?;
@@ -191,6 +218,7 @@ fn lint_verbs(
 
 #[tauri::command]
 fn get_file_size(file_path: String) -> Result<u64, AppErrorPayload> {
+    ensure_safe_path("get_file_size", &file_path)?;
     std::fs::metadata(&file_path)
         .map(|m| m.len())
         .map_err(|error| map_command_error("get_file_size", AppError::file_read(&file_path, error)))
